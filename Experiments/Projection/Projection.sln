@@ -1,0 +1,24 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Projection", "Projection\Projection\Projection.csproj", "{B5ADCD93-F29F-4881-A9D9-B525BB60D204}"
+EndProject
+Project("{96E2B04D-8817-42C6-938A-82C39BA4D311}") = "ProjectionContent", "Projection\ProjectionContent\ProjectionContent.contentproj", "{C3C4F6F1-1427-4C26-A0BC-695EBA48DF5F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x86 = Debug|x86
+		Release|x86 = Release|x86
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B5ADCD93-F29F-4881-A9D9-B525BB60D204}.Debug|x86.ActiveCfg = Debug|x86
+		{B5ADCD93-F29F-4881-A9D9-B525BB60D204}.Debug|x86.Build.0 = Debug|x86
+		{B5ADCD93-F29F-4881-A9D9-B525BB60D204}.Release|x86.ActiveCfg = Release|x86
+		{B5ADCD93-F29F-4881-A9D9-B525BB60D204}.Release|x86.Build.0 = Release|x86
+		{C3C4F6F1-1427-4C26-A0BC-695EBA48DF5F}.Debug|x86.ActiveCfg = Debug|x86
+		{C3C4F6F1-1427-4C26-A0BC-695EBA48DF5F}.Release|x86.ActiveCfg = Release|x86
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
