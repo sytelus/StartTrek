@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
@@ -20,6 +21,9 @@ namespace Projection
         Camera camera;
         Object3D object3D;
         BasicEffect effect;
+        private SpriteBatch spriteBatch;
+        private SpriteFont spriteFont;
+        private readonly Vector2 fontPos  = new Vector2(1.0f, 1.0f);
 
         public static readonly Vector3 SpaceSize = new Vector3(20,20,20);
 
@@ -37,11 +41,26 @@ namespace Projection
         /// </summary>
         protected override void Initialize()
         {
-            camera = new Camera(new Vector3(10f, 12f, 0.5f), 0, 0, GraphicsDevice.Viewport.AspectRatio, 0.05f, 100f);
+            ResetCamera();
             effect = new BasicEffect(GraphicsDevice);
             object3D = new Object3D(GraphicsDevice, SpaceSize);
 
             base.Initialize();
+        }
+
+        private readonly Vector3 cameraStartingPos = new Vector3(0f, 0f, 0f);
+        private void ResetCamera()
+        {
+            if (camera == null || camera.Position != cameraStartingPos)
+                camera = new Camera(cameraStartingPos, Vector3.Zero, GraphicsDevice.Viewport.AspectRatio, float.Epsilon, float.MaxValue);
+        }
+
+        protected override void LoadContent()
+        {
+            spriteBatch = new SpriteBatch(GraphicsDevice);
+            spriteFont = Content.Load<SpriteFont>(@"InfoFont");
+
+            base.LoadContent();
         }
 
 
@@ -56,47 +75,68 @@ namespace Projection
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
+            HandleUserInput(gameTime);
+
+            base.Update(gameTime);
+        }
+
+        private void HandleUserInput(GameTime gameTime)
+        {
             const float moveScale = 1.5f;
             const float rotateScale = MathHelper.PiOver2;
 
-            var elapsed = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            var elapsed = (float) gameTime.ElapsedGameTime.TotalSeconds;
             var keyState = Keyboard.GetState();
+
+            if (keyState.IsKeyDown(Keys.R))
+                ResetCamera();
 
             if (keyState.IsKeyDown(Keys.LeftControl) || keyState.IsKeyDown(Keys.RightControl))
             {
                 if (keyState.IsKeyDown(Keys.Right))
-                    camera.MoveTo(null, null, MathHelper.WrapAngle(rotateScale * elapsed));
+                    camera.MoveTo(null, new Vector3(0, MathHelper.WrapAngle(rotateScale*elapsed), 0));
                 if (keyState.IsKeyDown(Keys.Left))
-                    camera.MoveTo(null, null, MathHelper.WrapAngle(-rotateScale * elapsed));
+                    camera.MoveTo(null, new Vector3(0, MathHelper.WrapAngle(-rotateScale * elapsed), 0));
                 if (keyState.IsKeyDown(Keys.Up))
-                    camera.MoveTo(null, MathHelper.WrapAngle(rotateScale * elapsed), null);
+                    camera.MoveTo(null, new Vector3(MathHelper.WrapAngle(rotateScale * elapsed), 0, 0));
                 if (keyState.IsKeyDown(Keys.Down))
-                    camera.MoveTo(null, MathHelper.WrapAngle(-rotateScale * elapsed), null);
+                    camera.MoveTo(null, new Vector3(MathHelper.WrapAngle(-rotateScale * elapsed), 0, 0));
             }
             else if (keyState.IsKeyDown(Keys.LeftShift) || keyState.IsKeyDown(Keys.RightShift))
             {
                 if (keyState.IsKeyDown(Keys.Right))
-                    camera.MoveTo(new Vector3(moveScale * elapsed, 0, 0), null, null);
+                    camera.MoveTo(null, new Vector3(0, MathHelper.WrapAngle(rotateScale * elapsed), 0));
                 if (keyState.IsKeyDown(Keys.Left))
-                    camera.MoveTo(new Vector3(-moveScale * elapsed, 0, 0), null, null);
+                    camera.MoveTo(null, new Vector3(0, MathHelper.WrapAngle(-rotateScale * elapsed), 0));
                 if (keyState.IsKeyDown(Keys.Up))
-                    camera.MoveTo(new Vector3(0, moveScale * elapsed, 0), null, null);
+                    camera.MoveTo(null, new Vector3(MathHelper.WrapAngle(rotateScale * elapsed), 0, 0));
                 if (keyState.IsKeyDown(Keys.Down))
-                    camera.MoveTo(new Vector3(0, -moveScale * elapsed, 0), null, null);
+                    camera.MoveTo(null, new Vector3(MathHelper.WrapAngle(-rotateScale * elapsed), 0, 0));
             }
             else
             {
                 if (keyState.IsKeyDown(Keys.Right))
-                    camera.MoveTo(null, null, MathHelper.WrapAngle(rotateScale * elapsed));
+                    camera.MoveTo(new Vector3(moveScale * elapsed, 0, 0), null);
                 if (keyState.IsKeyDown(Keys.Left))
-                    camera.MoveTo(null, null, MathHelper.WrapAngle(-rotateScale * elapsed));
+                    camera.MoveTo(new Vector3(-moveScale * elapsed, 0, 0), null);
                 if (keyState.IsKeyDown(Keys.Up))
-                    camera.MoveTo(new Vector3(0, 0, moveScale * elapsed), null, null);
+                    camera.MoveTo(new Vector3(0, 0, moveScale*elapsed), null);
                 if (keyState.IsKeyDown(Keys.Down))
-                    camera.MoveTo(new Vector3(0, 0, -moveScale * elapsed), null, null);
+                    camera.MoveTo(new Vector3(0, 0, -moveScale*elapsed), null);
             }
+        }
 
-            base.Update(gameTime);
+        private void DrawInfoText()
+        {
+
+            var infoText = new StringBuilder();
+            infoText.AppendLine(string.Format("Camera Pos: {0}, {1}, {2}", camera.Position.X, camera.Position.Y, camera.Position.Z));
+            infoText.AppendLine(string.Format("Camera Rot: {0}, {1}, {2}", camera.Rotation.X, camera.Rotation.Y, camera.Rotation.Z));
+            infoText.AppendLine(string.Format("Look At: {0}, {1}, {2}", camera.LookAt.X, camera.LookAt.Y, camera.LookAt.Z));
+
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Additive);
+            spriteBatch.DrawString(spriteFont, infoText.ToString(), fontPos, Color.Yellow);
+            spriteBatch.End();
         }
 
         /// <summary>
@@ -111,6 +151,8 @@ namespace Projection
             //GraphicsDevice.DepthStencilState = DepthStencilState.None;  // don't bother with the depth/stencil buffer
 
             object3D.Draw(camera, effect);
+            
+            DrawInfoText();
 
             base.Draw(gameTime);
         }
