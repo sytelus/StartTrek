@@ -8,6 +8,9 @@ using System.IO;
 
 namespace InferWorld
 {
+    /// <summary>
+    /// Represents a projection matrix and the corresponding projected point.
+    /// </summary>
     public class ProjectedPoint
     {
         //3 X 4 matrix that premultiplies the world point [X, Y, Z, W] to create the 2D [X Y W]
@@ -18,6 +21,11 @@ namespace InferWorld
     }
 
 
+    /// <summary>
+    /// Methods are inferring the world point from a set of projections.
+    /// They are static because I intend to use them as delegates.
+    /// We will have multiple implementations that solve the same problem.
+    /// </summary>
     public static class InferWorld
     {
         static void Main(string[] args)
@@ -54,6 +62,13 @@ namespace InferWorld
 
         }
 
+        /// <summary>
+        /// Infer the 3D point using an exact method given its multiple projections.
+        /// Note that the projection can, in theory be made with multiple cameras from multiple positions.
+        /// (since is a side effect of rolling M and V into one matrix)
+        /// </summary>
+        /// <param name="projections">the list of projected points of soe world point.</param>
+        /// <returns>A 4X1 matrix - the inferred world point.</returns>
         public static DenseMatrix Infer3DExactLMS(IEnumerable<ProjectedPoint> projections)
         {
             DenseMatrix X = projections.Select(p => p.worldToImage).CombineRowwise();
@@ -64,6 +79,12 @@ namespace InferWorld
             return (DenseMatrix)(XTranspose * X).Inverse() * XTranspose * Y;
         }
 
+        /// <summary>
+        /// Combines a set of matrices by stacking them up rowwise.
+        /// The matrices are expected to be of identical size
+        /// </summary>
+        /// <param name="matrices"></param>
+        /// <returns>the combined matrix</returns>
         private static DenseMatrix CombineRowwise(this IEnumerable<DenseMatrix> matrices)
         {
             return
