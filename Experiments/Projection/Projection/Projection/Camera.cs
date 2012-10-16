@@ -9,7 +9,7 @@ namespace Projection
     class Camera
     {
         private Vector3 position = Vector3.Zero;
-        private float rotationX, rotationY;
+        private Vector3 rotation = Vector3.Zero;
 
         private readonly Vector3 baseCameraReference = new Vector3(0, 0, 1);
 
@@ -17,23 +17,17 @@ namespace Projection
         private Matrix? viewMatrix;
         public Matrix Projection { get; private set; }
 
-        public Camera(Vector3 position, float rotationX, float rotationY, float aspectRatio, float nearClip, float farClip)
+        public Camera(Vector3 position, Vector3 rotation, float aspectRatio, float nearClip, float farClip)
         {
             Projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspectRatio, nearClip, farClip);
-            this.MoveTo(position, rotationX, rotationY);
+            this.MoveTo(position, rotation);
         }
 
-        public void MoveTo(Vector3? deltaCameraPosition, float? deltaXRotation, float? deltaYRotation)
+        public void MoveTo(Vector3? deltaCameraPosition, Vector3? deltaRotation)
         {
-            if (deltaXRotation.HasValue)
+            if (deltaRotation.HasValue)
             {
-                rotationX += deltaXRotation.Value;
-                viewMatrix = null;
-                rotationMatrixCached = null;
-            }
-            if (deltaYRotation.HasValue)
-            {
-                rotationY += deltaYRotation.Value;
+                rotation += deltaRotation.Value;
                 viewMatrix = null;
                 rotationMatrixCached = null;
             }
@@ -58,17 +52,23 @@ namespace Projection
                 return rotationMatrixCached.Value;
             else
             {
-                rotationMatrixCached = Matrix.CreateRotationX(rotationX) * Matrix.CreateRotationY(rotationY);
+                rotationMatrixCached = Matrix.CreateFromYawPitchRoll(rotation.Y, rotation.X, rotation.Z);
                 return rotationMatrixCached.Value;
             }
         }
 
+        private Vector3 lookAt;
         private Matrix CreateViewMatrix()
         {
             var rotationMatrix = GetRotationMatrix();
             var lookAtOffset = Vector3.Transform(baseCameraReference, rotationMatrix);
-            var lookAt = position + lookAtOffset;
+            lookAt = position + lookAtOffset;
             return Matrix.CreateLookAt(Position, lookAt, Vector3.Up);
+        }
+
+        public Vector3 LookAt
+        {
+            get { return this.lookAt; }
         }
 
         public Vector3 Position
@@ -79,23 +79,14 @@ namespace Projection
             }
         }
 
-        public float RotationX
+        public Vector3 Rotation
         {
             get
             {
-                return rotationX;
+                return rotation;
             }
         }
-
-        public float RotationY
-        {
-            get
-            {
-                return rotationY;
-            }
-        }
-
-
+        
         public Matrix View
         {
             get
