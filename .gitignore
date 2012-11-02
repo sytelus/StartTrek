@@ -19,6 +19,9 @@ External Stuff/
 [Dd]ebug*/
 [Rr]elease*/
 
+#XNA junk
+*.csproj.Debug.cachefile
+
 #Tooling
 _ReSharper*/
 *.resharper

@@ -13,12 +13,16 @@ namespace Projection
         private VertexBuffer vertexBuffer;
         private IndexBuffer indexBuffer;
         private Vector3 spaceSize;
+        private Vector3 halfWidth;
+        private Vector3 center;
 
-
-        public Object3D(GraphicsDevice device, Vector3 spaceSize)
+        public Object3D(GraphicsDevice device, Vector3 spaceSize, Vector3 position)
         {
             this.device = device;
             this.spaceSize = spaceSize;
+            this.halfWidth = this.spaceSize / 20;
+            this.center = position;
+
             BuildVertexBuffer();
         }
 
@@ -33,12 +37,15 @@ namespace Projection
             indexBuffer.SetData<UInt16>(objectIndices);
         }
 
+        public Vector3 Center
+        {
+            get { return this.center; }
+        }
+
         private VertexPositionColor[] GetObjectVertices()
         {
-            var halfLength = this.spaceSize/20;
-            var center = new Vector3(0, 0, halfLength.Z*8);
-            var minPoint = center - halfLength;
-            var maxPoint = center + halfLength;
+            var minPoint = center - halfWidth;
+            var maxPoint = center + halfWidth;
 
             var cubeVertices = new VertexPositionColor[8];
 
@@ -120,20 +127,11 @@ namespace Projection
         }
 
 
-        public void Draw(Camera camera, BasicEffect effect)
+        public void Draw(Camera camera)
         {
-            effect.VertexColorEnabled = true;
-            effect.World = Matrix.Identity;
-            effect.View = camera.View;
-            effect.Projection = camera.Projection;
-
-            foreach (EffectPass pass in effect.CurrentTechnique.Passes)
-            {
-                pass.Apply();
-                device.SetVertexBuffer(vertexBuffer);
-                device.Indices = indexBuffer;
-                device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, vertexBuffer.VertexCount, 0, indexBuffer.IndexCount / 3);
-            }
+            device.SetVertexBuffer(vertexBuffer);
+            device.Indices = indexBuffer;
+            device.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, vertexBuffer.VertexCount, 0, indexBuffer.IndexCount / 3);
         }
     }
 }

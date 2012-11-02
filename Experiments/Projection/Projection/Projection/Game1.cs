@@ -20,10 +20,11 @@ namespace Projection
         GraphicsDeviceManager graphics;
         Camera camera;
         Object3D object3D;
-        BasicEffect effect;
+        Effect effect;
         private SpriteBatch spriteBatch;
         private SpriteFont spriteFont;
         private readonly Vector2 fontPos  = new Vector2(1.0f, 1.0f);
+        private float arcBallRadius, screenWidth, screenHeight;
 
         public static readonly Vector3 SpaceSize = new Vector3(20,20,20);
 
@@ -31,6 +32,11 @@ namespace Projection
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
+
+            Window.AllowUserResizing = true;
+            Window.ClientSizeChanged += Window_ClientSizeChanged;
+
+            this.IsMouseVisible = true;
         }
 
         /// <summary>
@@ -41,23 +47,26 @@ namespace Projection
         /// </summary>
         protected override void Initialize()
         {
+            object3D = new Object3D(graphics.GraphicsDevice, SpaceSize, new Vector3(0, 0, SpaceSize.Z / 2));
             ResetCamera();
-            effect = new BasicEffect(GraphicsDevice);
-            object3D = new Object3D(GraphicsDevice, SpaceSize);
 
+            Window_ClientSizeChanged(null, EventArgs.Empty); 
+            
             base.Initialize();
         }
 
-        private readonly Vector3 cameraStartingPos = new Vector3(0f, 0f, 0f);
+        private readonly Vector3 cameraStartingPos = Vector3.Zero;
         private void ResetCamera()
         {
             if (camera == null || camera.Position != cameraStartingPos)
-                camera = new Camera(cameraStartingPos, Vector3.Zero, GraphicsDevice.Viewport.AspectRatio, float.Epsilon, float.MaxValue);
+                camera = new Camera(cameraStartingPos, object3D.Center, Vector3.Up, graphics.GraphicsDevice.Viewport.AspectRatio, 0.05f, 1000f);
         }
 
         protected override void LoadContent()
         {
-            spriteBatch = new SpriteBatch(GraphicsDevice);
+            effect = Content.Load<Effect>(@"ReallyBasicEffect");
+
+            spriteBatch = new SpriteBatch(graphics.GraphicsDevice);
             spriteFont = Content.Load<SpriteFont>(@"InfoFont");
 
             base.LoadContent();
@@ -75,15 +84,74 @@ namespace Projection
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
-            HandleUserInput(gameTime);
+            HandleKeyboardInput(gameTime);
+            HandleMouseInput(gameTime);
+
+            if ((userActivityState & UserActivityState.Rotate) == UserActivityState.Rotate)
+                camera.Rotate(ref mouseRotationStart, ref mouseRotationEnd, object3D.Center);
 
             base.Update(gameTime);
         }
 
-        private void HandleUserInput(GameTime gameTime)
+        [Flags]
+        enum UserActivityState
         {
-            const float moveScale = 1.5f;
-            const float rotateScale = MathHelper.PiOver2;
+            None = 0, Rotate = 1, Zoom = 2, Pan = 4
+        }
+
+        private Vector3 mouseRotationStart, mouseRotationEnd;
+        private UserActivityState userActivityState = UserActivityState.None;
+        private int mouseDownCount = 0;
+        private void HandleMouseInput(GameTime gameTime1)
+        {
+            var mouseState = Mouse.GetState();
+
+            camera.DebugMessages["userActivityState"] = userActivityState.ToString();
+            camera.DebugMessages["mouseDownCount"] = mouseDownCount.ToString();
+            if (mouseState.LeftButton == ButtonState.Pressed)
+            {
+                if ((userActivityState & UserActivityState.Rotate) != UserActivityState.Rotate)  //Mouse down event
+                {
+                    userActivityState |= UserActivityState.Rotate;
+                    var mouseStartVector = GetMouseArcBallVector(mouseState);
+                    camera.DebugMessages["mouseStartVector"] = mouseStartVector.ToString();
+                    mouseRotationStart = camera.GetMouseProjectionOnArcBall(mouseStartVector, object3D.Center);
+                    mouseRotationEnd = mouseRotationStart;
+                    mouseDownCount++;
+                }
+                else //Mouse move while left down
+                {
+                    var mouseEndVector = GetMouseArcBallVector(mouseState);
+                    camera.DebugMessages["mouseEndVector"] = mouseEndVector.ToString();
+                    mouseRotationEnd = camera.GetMouseProjectionOnArcBall(mouseEndVector, object3D.Center);
+                }
+            }
+            else
+            {
+                userActivityState &= ~UserActivityState.Rotate;
+            }
+        }
+
+        private Vector3 GetMouseArcBallVector(MouseState mouseState)
+        {
+            var mouseArcBallVector = new Vector3((mouseState.X - 0.5f * this.screenWidth) / arcBallRadius
+                , (0.5f * screenHeight - mouseState.Y) / arcBallRadius, 0);
+
+            var length = mouseArcBallVector.Length();
+
+            if (length > 1)
+                mouseArcBallVector.Normalize();
+            else
+                mouseArcBallVector.Z = (float) Math.Sqrt(1f - length*length);
+
+            return mouseArcBallVector;
+        }
+
+        private void HandleKeyboardInput(GameTime gameTime)
+        {
+            const float moveScale = 1.5f / 100;
+            const float rotateScale = MathHelper.PiOver2 / 100;
+            const float rotateScale2 = MathHelper.PiOver2 / 1000;
 
             var elapsed = (float) gameTime.ElapsedGameTime.TotalSeconds;
             var keyState = Keyboard.GetState();
@@ -94,49 +162,66 @@ namespace Projection
             if (keyState.IsKeyDown(Keys.LeftControl) || keyState.IsKeyDown(Keys.RightControl))
             {
                 if (keyState.IsKeyDown(Keys.Right))
-                    camera.MoveTo(null, new Vector3(0, MathHelper.WrapAngle(rotateScale*elapsed), 0));
+                    camera.Rotate(rotateScale2, object3D.Center);
                 if (keyState.IsKeyDown(Keys.Left))
-                    camera.MoveTo(null, new Vector3(0, MathHelper.WrapAngle(-rotateScale * elapsed), 0));
+                    camera.Rotate(-rotateScale2, object3D.Center);
                 if (keyState.IsKeyDown(Keys.Up))
-                    camera.MoveTo(null, new Vector3(MathHelper.WrapAngle(rotateScale * elapsed), 0, 0));
+                    camera.Rotate(rotateScale2, object3D.Center);
                 if (keyState.IsKeyDown(Keys.Down))
-                    camera.MoveTo(null, new Vector3(MathHelper.WrapAngle(-rotateScale * elapsed), 0, 0));
+                    camera.Rotate(-rotateScale2, object3D.Center);
             }
             else if (keyState.IsKeyDown(Keys.LeftShift) || keyState.IsKeyDown(Keys.RightShift))
             {
                 if (keyState.IsKeyDown(Keys.Right))
-                    camera.MoveTo(null, new Vector3(0, MathHelper.WrapAngle(rotateScale * elapsed), 0));
+                    camera.Rotate(new Vector3(0, MathHelper.WrapAngle(rotateScale), 0));
                 if (keyState.IsKeyDown(Keys.Left))
-                    camera.MoveTo(null, new Vector3(0, MathHelper.WrapAngle(-rotateScale * elapsed), 0));
+                    camera.Rotate(new Vector3(0, MathHelper.WrapAngle(-rotateScale), 0));
                 if (keyState.IsKeyDown(Keys.Up))
-                    camera.MoveTo(null, new Vector3(MathHelper.WrapAngle(rotateScale * elapsed), 0, 0));
+                    camera.Rotate(new Vector3(MathHelper.WrapAngle(rotateScale), 0, 0));
                 if (keyState.IsKeyDown(Keys.Down))
-                    camera.MoveTo(null, new Vector3(MathHelper.WrapAngle(-rotateScale * elapsed), 0, 0));
+                    camera.Rotate(new Vector3(MathHelper.WrapAngle(-rotateScale), 0, 0));
             }
             else
             {
                 if (keyState.IsKeyDown(Keys.Right))
-                    camera.MoveTo(new Vector3(moveScale * elapsed, 0, 0), null);
+                    camera.MoveTo(new Vector3(moveScale, 0, 0));
                 if (keyState.IsKeyDown(Keys.Left))
-                    camera.MoveTo(new Vector3(-moveScale * elapsed, 0, 0), null);
+                    camera.MoveTo(new Vector3(-moveScale, 0, 0));
                 if (keyState.IsKeyDown(Keys.Up))
-                    camera.MoveTo(new Vector3(0, 0, moveScale*elapsed), null);
+                    camera.MoveTo(new Vector3(0, 0, moveScale));
                 if (keyState.IsKeyDown(Keys.Down))
-                    camera.MoveTo(new Vector3(0, 0, -moveScale*elapsed), null);
+                    camera.MoveTo(new Vector3(0, 0, -moveScale));
             }
         }
 
         private void DrawInfoText()
         {
+            var mouseState = Mouse.GetState();
 
             var infoText = new StringBuilder();
             infoText.AppendLine(string.Format("Camera Pos: {0}, {1}, {2}", camera.Position.X, camera.Position.Y, camera.Position.Z));
-            infoText.AppendLine(string.Format("Camera Rot: {0}, {1}, {2}", camera.Rotation.X, camera.Rotation.Y, camera.Rotation.Z));
-            infoText.AppendLine(string.Format("Look At: {0}, {1}, {2}", camera.LookAt.X, camera.LookAt.Y, camera.LookAt.Z));
+            infoText.AppendLine(string.Format("Camera Forward: {0}, {1}, {2}, {3}", camera.ViewMatrix.Forward.X, camera.ViewMatrix.Forward.Y, camera.ViewMatrix.Forward.Z, camera.ViewMatrix.Forward.Length()));
+            infoText.AppendLine(string.Format("Camera Up: {0}, {1}, {2}, {3}", camera.Up.X, camera.Up.Y, camera.Up.Z, camera.Up.Length()));
+            infoText.AppendLine(string.Format("Camera Right: {0}, {1}, {2}, {3}", camera.ViewMatrix.Right.X, camera.ViewMatrix.Right.Y, camera.ViewMatrix.Right.Z, camera.ViewMatrix.Right.Length()));
+            infoText.AppendLine(string.Format("Mouse: {0}, {1}", mouseState.X, mouseState.Y));
+            infoText.AppendLine(string.Format("Distance: {0}", (object3D.Center - camera.Position).Length()));
+            infoText.AppendLine(string.Format("Camera Basis Angles: {0}, {1}, {2}", camera.ViewMatrix.Forward.AngleWith(camera.Up, false), camera.Up.AngleWith(camera.ViewMatrix.Left, false), camera.ViewMatrix.Left.AngleWith(camera.ViewMatrix.Forward, false)));
+
+            foreach (var debugMessage in camera.DebugMessages)
+            {
+                infoText.AppendLine(string.Format("{0}: {1}", debugMessage.Key, debugMessage.Value));
+            }
 
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Additive);
             spriteBatch.DrawString(spriteFont, infoText.ToString(), fontPos, Color.Yellow);
             spriteBatch.End();
+        }
+
+        private void Window_ClientSizeChanged(object sender, EventArgs e)
+        {
+            screenWidth = graphics.GraphicsDevice.Viewport.Width;
+            screenHeight = graphics.GraphicsDevice.Viewport.Height;
+            arcBallRadius = (screenWidth + screenHeight)/4;
         }
 
         /// <summary>
@@ -145,13 +230,25 @@ namespace Projection
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.CornflowerBlue);
-            GraphicsDevice.RasterizerState = RasterizerState.CullNone;  // vertex order doesn't matter
-            GraphicsDevice.BlendState = BlendState.Opaque;    // use alpha blending
-            //GraphicsDevice.DepthStencilState = DepthStencilState.None;  // don't bother with the depth/stencil buffer
+            graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
 
-            object3D.Draw(camera, effect);
-            
+            //These gets reset by SpriteBuffer so we need to set these to default
+            graphics.GraphicsDevice.RasterizerState = RasterizerState.CullClockwise;
+            graphics.GraphicsDevice.BlendState = BlendState.Opaque;
+            graphics.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+            graphics.GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
+
+            effect.CurrentTechnique = effect.Techniques["MainTechnique"];
+            effect.Parameters["World"].SetValue(Matrix.Identity);
+            effect.Parameters["View"].SetValue(camera.ViewMatrix);
+            effect.Parameters["Projection"].SetValue(camera.ProjectionMatrix);
+
+            foreach (var pass in effect.CurrentTechnique.Passes)
+            {
+                pass.Apply();
+                object3D.Draw(camera);
+            }
+           
             DrawInfoText();
 
             base.Draw(gameTime);

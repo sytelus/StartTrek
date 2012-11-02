@@ -25,6 +25,21 @@ namespace Projection
             }
         }
 
+        public static float AngleWith(this Vector3 vector, Vector3 anotherVector, bool inRadiance = true)
+        {
+            var normalizedDotProduct = Vector3.Dot(vector, anotherVector)/vector.Length()/anotherVector.Length();
+            if (normalizedDotProduct > 1)   //happens because of rounding
+                normalizedDotProduct = 1;
+            else if (normalizedDotProduct < -1)
+                normalizedDotProduct = -1;
+
+            var angleInRadiance = (float) Math.Acos(normalizedDotProduct);
+            if (inRadiance)
+                return angleInRadiance;
+            else
+                return MathHelper.ToDegrees(angleInRadiance);
+        }
+
         public static Vector3 RotateComponent(this Vector3 vector, int rotateCount)
         {
             switch (rotateCount % 3)
