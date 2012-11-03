@@ -23,7 +23,7 @@ namespace Projection
 
         public override Vector3 SuggestedInitialCameraPosition
         {
-            get { return this.Center - this.cube.Bounds.GetZVector() * 5; }   //Stay away 10X the width of cube
+            get { return this.Center + this.cube.Bounds.GetZVector() * 3; }   //Stay away 10X the width of cube
         }
     }
 }

@@ -82,7 +82,7 @@ namespace Projection
 
         public void MoveTo(Vector3 deltaPosition)
         {
-            this.SetPosition(this.Position + deltaPosition);
+            this.SetPosition(this.Position + this.Right() * deltaPosition.X + this.Up * deltaPosition.Y + this.Forward * deltaPosition.Z);
         }
 
         public Vector3 GetMouseProjectionOnArcBall(Vector3 normalizedMouseVector, Vector3 aroundTarget)
@@ -126,13 +126,27 @@ namespace Projection
 
         public void Rotate(Vector3 deltaRotation)
         {
-            var rotation = Quaternion.CreateFromYawPitchRoll(deltaRotation.Y, deltaRotation.X, deltaRotation.Z);
+            var rotation = GetRotation(deltaRotation);
+
             this.Rotate(rotation);
+        }
+
+        private Quaternion GetRotation(Vector3 deltaRotation)
+        {
+            var rotation = Quaternion.CreateFromAxisAngle(this.Right(), deltaRotation.X)
+                           * Quaternion.CreateFromAxisAngle(this.Up, deltaRotation.Y)
+                           * Quaternion.CreateFromAxisAngle(this.Forward, deltaRotation.Z);
+            return rotation;
+        }
+
+        public Vector3 Right()
+        {
+            return Vector3.Cross(this.Up, this.Forward);
         }
 
         public void Rotate(Vector3 deltaRotation, Vector3 aroundTarget)
         {
-            var rotation = Quaternion.CreateFromYawPitchRoll(deltaRotation.Y, deltaRotation.X, deltaRotation.Z);
+            var rotation = GetRotation(deltaRotation);
             this.Rotate(rotation, aroundTarget);
         }
 

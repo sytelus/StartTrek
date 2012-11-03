@@ -133,6 +133,10 @@ namespace Projection
                 throw new ArgumentException("Numbers of vertexes were not in multiple of 3");
         }
 
+        public static void AddToTranslation(this Matrix matrix, Vector3 vector)
+        {
+            matrix.Translation += vector;
+        }
 
         private static KnownColor[] knownColorNames = (KnownColor[])Enum.GetValues(typeof(System.Drawing.KnownColor));
         private static Random random = new Random(42);

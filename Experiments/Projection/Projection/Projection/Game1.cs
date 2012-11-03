@@ -78,7 +78,7 @@ namespace Projection
 
             //Create camera
             var cameraPosition = scene.SuggestedInitialCameraPosition;
-            var cameraUp = Vector3.Normalize((cameraPosition - rotationOrigin).SafeCross(Vector3.Right, Vector3.Up));
+            var cameraUp = Vector3.Normalize((rotationOrigin - cameraPosition).SafeCross(Vector3.Right, Vector3.Up));
             camera = new Camera(graphics.GraphicsDevice, cameraPosition, rotationOrigin, cameraUp, graphics.GraphicsDevice.Viewport.AspectRatio, 0.05f, 1E+5f);
 
             //Create help/debug text

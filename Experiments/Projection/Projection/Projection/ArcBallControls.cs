@@ -88,7 +88,7 @@ namespace Projection
                 else //Mouse move while middle down
                 {
                     mousePanEnd = GetNormalizedMouseCoordinates(mouseState);
-                    var panAmount = (mousePanEnd - mousePanStart) * this.PanSpeed;
+                    var panAmount = (mousePanStart - mousePanEnd) * this.PanSpeed;
                     if (panAmount.LengthSquared() > 0)
                     {
                         object3D.MoveTo(panAmount);
@@ -155,54 +155,54 @@ namespace Projection
 
         private void HandleKeyboardInput(GameTime gameTime, KeyboardState keyboardState)
         {
-            const float moveScale = 0.7f;
-            const float tiltScale = MathHelper.PiOver2 / 80;
-            const float rotateScale = MathHelper.PiOver2 / 100;
+            const float moveSpeed = 0.7f;
+            const float tiltSpeed = MathHelper.PiOver2 / 80;
+            const float rotateSpeed = MathHelper.PiOver2 / 100;
 
             if (keyboardState.IsKeyDown(Keys.LeftControl) || keyboardState.IsKeyDown(Keys.RightControl))  //Rotate
             {
                 if (keyboardState.IsKeyDown(Keys.Right))
-                    object3D.Rotate(new Vector3(0, rotateScale, 0), rotationOrigin);
+                    object3D.Rotate(new Vector3(0, -rotateSpeed, 0), rotationOrigin);
                 if (keyboardState.IsKeyDown(Keys.Left))
-                    object3D.Rotate(new Vector3(0, -rotateScale, 0), rotationOrigin);
+                    object3D.Rotate(new Vector3(0, rotateSpeed, 0), rotationOrigin);
                 if (keyboardState.IsKeyDown(Keys.Up))
-                    object3D.Rotate(new Vector3(rotateScale, 0, 0), rotationOrigin);
+                    object3D.Rotate(new Vector3(-rotateSpeed, 0, 0), rotationOrigin);
                 if (keyboardState.IsKeyDown(Keys.Down))
-                    object3D.Rotate(new Vector3(-rotateScale, 0, 0), rotationOrigin);
+                    object3D.Rotate(new Vector3(rotateSpeed, 0, 0), rotationOrigin);
                 if (keyboardState.IsKeyDown(Keys.PageUp))
-                    object3D.Rotate(new Vector3(0, 0, rotateScale), rotationOrigin);
+                    object3D.Rotate(new Vector3(0, 0, rotateSpeed), rotationOrigin);
                 if (keyboardState.IsKeyDown(Keys.PageDown))
-                    object3D.Rotate(new Vector3(0, 0, -rotateScale), rotationOrigin);
+                    object3D.Rotate(new Vector3(0, 0, -rotateSpeed), rotationOrigin);
             }
             else if (keyboardState.IsKeyDown(Keys.LeftShift) || keyboardState.IsKeyDown(Keys.RightShift)) //Tilt
             {
                 if (keyboardState.IsKeyDown(Keys.Right))
-                    object3D.Rotate(new Vector3(0, -tiltScale, 0));
+                    object3D.Rotate(new Vector3(0, tiltSpeed, 0));
                 if (keyboardState.IsKeyDown(Keys.Left))
-                    object3D.Rotate(new Vector3(0, tiltScale, 0));
+                    object3D.Rotate(new Vector3(0, -tiltSpeed, 0));
                 if (keyboardState.IsKeyDown(Keys.Up))
-                    object3D.Rotate(new Vector3(-tiltScale, 0, 0));
+                    object3D.Rotate(new Vector3(tiltSpeed, 0, 0));
                 if (keyboardState.IsKeyDown(Keys.Down))
-                    object3D.Rotate(new Vector3(tiltScale, 0, 0));
+                    object3D.Rotate(new Vector3(-tiltSpeed, 0, 0));
                 if (keyboardState.IsKeyDown(Keys.PageUp))
-                    object3D.Rotate(new Vector3(0, 0, -tiltScale));
+                    object3D.Rotate(new Vector3(0, 0, tiltSpeed));
                 if (keyboardState.IsKeyDown(Keys.PageDown))
-                    object3D.Rotate(new Vector3(0, 0, tiltScale));
+                    object3D.Rotate(new Vector3(0, 0, -tiltSpeed));
             }
             else                                                                                //Pan
             {
                 if (keyboardState.IsKeyDown(Keys.Right))
-                    object3D.MoveTo(new Vector3(-moveScale, 0, 0));
+                    object3D.MoveTo(new Vector3(moveSpeed, 0, 0));
                 if (keyboardState.IsKeyDown(Keys.Left))
-                    object3D.MoveTo(new Vector3(moveScale, 0, 0));
+                    object3D.MoveTo(new Vector3(-moveSpeed, 0, 0));
                 if (keyboardState.IsKeyDown(Keys.Up))
-                    object3D.MoveTo(new Vector3(0, 0, moveScale));
+                    object3D.MoveTo(new Vector3(0, 0, moveSpeed));
                 if (keyboardState.IsKeyDown(Keys.Down))
-                    object3D.MoveTo(new Vector3(0, 0, -moveScale));
+                    object3D.MoveTo(new Vector3(0, 0, -moveSpeed));
                 if (keyboardState.IsKeyDown(Keys.PageUp))
-                    object3D.MoveTo(new Vector3(0, moveScale, 0));
+                    object3D.MoveTo(new Vector3(0, -moveSpeed, 0));
                 if (keyboardState.IsKeyDown(Keys.PageDown))
-                    object3D.MoveTo(new Vector3(0, -moveScale, 0));
+                    object3D.MoveTo(new Vector3(0, moveSpeed, 0));
             }
         }
 
