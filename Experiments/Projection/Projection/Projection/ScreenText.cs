@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
@@ -14,12 +15,23 @@ namespace Projection
         private SpriteBatch spriteBatch;
         private SpriteFont spriteFont;
 
+        public enum ScreenTextModeType
+        {
+            Help,
+            Info,
+            None
+        }
+
         public Camera Camera { get; set; }
+        public ScreenTextModeType ScreenTextMode { get; set; }
 
         public ScreenText(GraphicsDevice graphicsDevice, Vector3 position, Camera camera)
             :base(graphicsDevice, position, Vector3.Zero, Vector3.Up)
         {
             this.Camera = camera;
+
+            ScreenTextMode = ScreenTextModeType.Help;
+            infoText.Append(HelpText);
         }
 
         public override void LoadContent(ContentManager content)
@@ -34,7 +46,53 @@ namespace Projection
         }
 
         StringBuilder infoText = new StringBuilder();
+        Stopwatch lastChangeTime = Stopwatch.StartNew();
         public override void Update(GameTime gameTime, MouseState mouseState, KeyboardState keyState, List<Object3D> objects)
+        {
+            if (keyState.IsKeyDown(Keys.F1) && lastChangeTime.ElapsedMilliseconds > 400)
+            {
+                if (this.ScreenTextMode == ScreenTextModeType.Help)
+                {
+                    this.ScreenTextMode = ScreenTextModeType.None;
+                    infoText.Clear();
+                }
+                else
+                {
+                    this.ScreenTextMode = ScreenTextModeType.Help;
+                    infoText.Clear();
+                    infoText.Append(HelpText);
+                }
+                
+                lastChangeTime.Restart();
+            }
+            if (keyState.IsKeyDown(Keys.D) && lastChangeTime.ElapsedMilliseconds > 400)
+            {
+                if (this.ScreenTextMode == ScreenTextModeType.Info)
+                {
+                    this.ScreenTextMode = ScreenTextModeType.None;
+                    infoText.Clear();
+                }
+                else
+                    this.ScreenTextMode = ScreenTextModeType.Info;
+
+                lastChangeTime.Restart();
+            }
+
+            switch (this.ScreenTextMode)
+            {
+                case ScreenTextModeType.None:
+                    break;  //Static info text
+                case ScreenTextModeType.Help:
+                    break;  //Static info text
+                case ScreenTextModeType.Info:
+                    GetInfoText(mouseState);
+                    break;
+                default:
+                    throw new ArgumentException(string.Format("ScreenTextMode value {0} is not recognized", ScreenTextMode.ToString()));
+            }
+        }
+
+        private void GetInfoText(MouseState mouseState)
         {
             infoText.Clear();
             infoText.AppendLine(string.Format("Camera Pos: {0}, {1}, {2}", this.Camera.Position.X, this.Camera.Position.Y, this.Camera.Position.Z));
@@ -49,7 +107,6 @@ namespace Projection
             {
                 infoText.AppendLine(string.Format("{0}: {1}", debugMessage.Key, debugMessage.Value));
             }
-
         }
 
         public override void Draw()
@@ -58,5 +115,13 @@ namespace Projection
             spriteBatch.DrawString(spriteFont, infoText.ToString(), new Vector2(this.Position.X, this.Position.Y), Color.Yellow);
             spriteBatch.End();
         }
+
+        private const string HelpText = @"Use Arrows & PageUp/Down keys or Mouse dragging
+Ctrl+Keys Or Left Mouse -> Rotate
+Shift+Keys -> Tilt
+Keys Or Right Mouse -> Pan
+F1 -> Show Hide Help
+D -> Show Hide Debug Info
+";
     }
 }

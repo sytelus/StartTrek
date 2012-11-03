@@ -55,12 +55,12 @@ namespace Projection
         /// </summary>
         protected override void Initialize()
         {
-            ResetScene();
+            ResetScene(false);
             base.Initialize();
         }
 
         Vector3 rotationOrigin = Vector3.Zero;
-        private void ResetScene()
+        private void ResetScene(bool loadContent)
         {
             this.objects.Clear();
 
@@ -85,6 +85,14 @@ namespace Projection
             this.objects.Add(screenText);
 
             this.SetUpdatableObjects();
+
+            if (loadContent)
+            {
+                foreach (var object3D in objects)
+                {
+                    object3D.LoadContent(this.Content);
+                }
+            }
         }
 
         private void SetUpdatableObjects()
@@ -111,7 +119,7 @@ namespace Projection
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
             if (keyState.IsKeyDown(Keys.R))
-                ResetScene();
+                ResetScene(true);
 
             //Update objects
             foreach (var updatableObject in updatableObjects)
