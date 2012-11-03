@@ -39,6 +39,11 @@ namespace Projection
             this.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, vertexBuffer.VertexCount, 0, indexBuffer.IndexCount / 3);
         }
 
+        public override bool RequiresUpdate
+        {
+            get { return false; }
+        }
+
         private VertexPositionColor[] GetObjectVertices()
         {
             var minPoint = this.Position - halfWidth;

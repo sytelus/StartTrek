@@ -8,7 +8,7 @@ using Microsoft.Xna.Framework.Graphics;
 
 namespace Projection
 {
-    class Camera : Object3D
+    public class Camera : Object3D
     {
         public Matrix ProjectionMatrix { get; protected set; }
 
@@ -19,9 +19,9 @@ namespace Projection
             ProjectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspectRatio, nearClip, farClip);
         }
 
-        public override void Draw()
+        public override bool RequiresUpdate
         {
-            //Nothing to do
+            get { return false; }
         }
     }
 }

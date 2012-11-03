@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
+using Microsoft.Xna.Framework.Content;
 using Microsoft.Xna.Framework.Graphics;
+using Microsoft.Xna.Framework.Input;
 
 namespace Projection
 {
@@ -40,8 +42,26 @@ namespace Projection
             ResetViewMatrix();
         }
 
+        #region Derived class interface
 
-        public abstract void Draw();
+        public abstract bool RequiresUpdate { get; }
+        public virtual void Update(GameTime gameTime, MouseState mouseState, KeyboardState keyState, List<Object3D> objects)
+        {
+            if (this.RequiresUpdate)
+                throw new Exception("Derived class requires update but has not implemented it");
+            else
+                throw new Exception("Update should not be called on this object because it does not require it");
+        }
+        public virtual void Draw()
+        {
+            //for derived class
+        }
+        public virtual void LoadContent(ContentManager content)
+        {
+            //for derived class
+        }
+
+        #endregion 
 
         protected void ResetViewMatrix()
         {
@@ -131,7 +151,7 @@ namespace Projection
         }
 
         
-#region Lazy debug properties
+        #region Lazy debug properties
         private Dictionary<string, string> debugMessages;
         public Dictionary<string, string> DebugMessages
         {

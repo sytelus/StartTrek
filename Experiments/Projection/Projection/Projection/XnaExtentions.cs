@@ -87,6 +87,15 @@ namespace Projection
             }
         }
 
+        public static Vector3 SafeCross(this Vector3 main, Vector3 crossWith, Vector3 alternateCrossWith)
+        {
+            var cross = Vector3.Cross(main, crossWith);
+            if (!cross.IsValid() || cross.LengthSquared() < 1E-02)
+                cross = Vector3.Cross(main, alternateCrossWith);
+
+            return cross;
+        }
+
         public static int Dimensions(this Vector3 vector, int i)
         {
             return 3;

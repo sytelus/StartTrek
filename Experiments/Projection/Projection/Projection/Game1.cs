@@ -24,13 +24,12 @@ namespace Projection
         
         Camera camera;
         List<Object3D> objects = new List<Object3D>();
+        List<Object3D> updatableObjects = new List<Object3D>();
 
         private Vector3 rotationOrigin = Vector3.Zero;
 
         Effect effect;
-        private SpriteBatch spriteBatch;
-        private SpriteFont spriteFont;
-        private readonly Vector2 fontPos  = new Vector2(1.0f, 1.0f);
+
         private float arcBallRadius, screenWidth, screenHeight;
 
         public Game1()
@@ -55,36 +54,43 @@ namespace Projection
         protected override void Initialize()
         {
             ResetScene();
-            Window_ClientSizeChanged(null, EventArgs.Empty); 
             base.Initialize();
         }
 
         private void ResetScene()
         {
-            objects.Clear();
+            Window_ClientSizeChanged(null, EventArgs.Empty); 
+
+            this.objects.Clear();
 
             var cube = new Cube(graphics.GraphicsDevice
                 , position: rotationOrigin    //We'll rotate around origin so place object there
                 , bounds: new Vector3(20, 20, 20));
 
             var cameraPosition = cube.Position - cube.Bounds.GetZVector()*5; //Stay away 10X the width of cube
-            var cameraUp = Vector3.Cross(Vector3.Normalize(cameraPosition - cube.Position), Vector3.Right);
-            if (cameraUp.LengthSquared() < 1E-02)
-                cameraUp = Vector3.Cross(Vector3.Normalize(cameraPosition - cube.Position), Vector3.Up);
+            var cameraUp = Vector3.Normalize((cameraPosition - cube.Position).SafeCross(Vector3.Right, Vector3.Up));
+            camera = new Camera(graphics.GraphicsDevice, cameraPosition, cube.Position, cameraUp, graphics.GraphicsDevice.Viewport.AspectRatio, 0.05f, 1E+5f);
 
-            if (camera == null || camera.Position != cameraPosition)
-                camera = new Camera(graphics.GraphicsDevice, cameraPosition, cube.Position, cameraUp, graphics.GraphicsDevice.Viewport.AspectRatio, 0.05f, 1E+5f);
+            var screenText = new ScreenText(graphics.GraphicsDevice, new Vector3(1.0f, 1.0f, 0), camera);
 
-            objects.Add(cube);
-            objects.Add(camera);
+            this.objects.Add(cube);
+            this.objects.Add(camera);
+            this.objects.Add(screenText);
+
+            this.SetUpdatableObjects();
+        }
+
+        private void SetUpdatableObjects()
+        {
+            this.updatableObjects = objects.Where(o => o.RequiresUpdate).ToList();
         }
 
         protected override void LoadContent()
         {
             effect = Content.Load<Effect>(@"ReallyBasicEffect");
 
-            spriteBatch = new SpriteBatch(graphics.GraphicsDevice);
-            spriteFont = Content.Load<SpriteFont>(@"InfoFont");
+            foreach (var object3D in this.objects)
+                object3D.LoadContent(Content);
 
             base.LoadContent();
         }
@@ -99,6 +105,11 @@ namespace Projection
         {
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
+
+            var mouseState = Mouse.GetState();
+            var keyState = Keyboard.GetState();
+            foreach (var updatableObject in updatableObjects)
+                updatableObject.Update(gameTime, mouseState, keyState, this.objects);
 
             HandleKeyboardInput(gameTime);
             HandleMouseInput(gameTime);
@@ -208,29 +219,6 @@ namespace Projection
             }
         }
 
-        private void DrawInfoText()
-        {
-            var mouseState = Mouse.GetState();
-
-            var infoText = new StringBuilder();
-            infoText.AppendLine(string.Format("Camera Pos: {0}, {1}, {2}", camera.Position.X, camera.Position.Y, camera.Position.Z));
-            infoText.AppendLine(string.Format("Camera Forward: {0}, {1}, {2}, {3}", camera.ViewMatrix.Forward.X, camera.ViewMatrix.Forward.Y, camera.ViewMatrix.Forward.Z, camera.ViewMatrix.Forward.Length()));
-            infoText.AppendLine(string.Format("Camera Up: {0}, {1}, {2}, {3}", camera.ViewMatrix.Up.X, camera.ViewMatrix.Up.Y, camera.ViewMatrix.Up.Z, camera.ViewMatrix.Up.Length()));
-            infoText.AppendLine(string.Format("Camera Right: {0}, {1}, {2}, {3}", camera.ViewMatrix.Right.X, camera.ViewMatrix.Right.Y, camera.ViewMatrix.Right.Z, camera.ViewMatrix.Right.Length()));
-            infoText.AppendLine(string.Format("Mouse: {0}, {1}", mouseState.X, mouseState.Y));
-            infoText.AppendLine(string.Format("Distance: {0}", (rotationOrigin - camera.Position).Length()));
-            infoText.AppendLine(string.Format("Camera Basis Angles: {0}, {1}, {2}", camera.ViewMatrix.Forward.AngleWith(camera.Up, false), camera.Up.AngleWith(camera.ViewMatrix.Left, false), camera.ViewMatrix.Left.AngleWith(camera.ViewMatrix.Forward, false)));
-
-            foreach (var debugMessage in camera.DebugMessages)
-            {
-                infoText.AppendLine(string.Format("{0}: {1}", debugMessage.Key, debugMessage.Value));
-            }
-
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Additive);
-            spriteBatch.DrawString(spriteFont, infoText.ToString(), fontPos, Color.Yellow);
-            spriteBatch.End();
-        }
-
         private void Window_ClientSizeChanged(object sender, EventArgs e)
         {
             screenWidth = graphics.GraphicsDevice.Viewport.Width;
@@ -238,16 +226,12 @@ namespace Projection
             arcBallRadius = (screenWidth + screenHeight)/4;
         }
 
-        /// <summary>
-        /// This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
             graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
 
             //These gets reset by SpriteBuffer so we need to set these to default
-            graphics.GraphicsDevice.RasterizerState = RasterizerState.CullClockwise;
+            graphics.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
             graphics.GraphicsDevice.BlendState = BlendState.Opaque;
             graphics.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             graphics.GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
@@ -264,8 +248,6 @@ namespace Projection
                 foreach(var object3D in this.objects)
                     object3D.Draw();
             }
-           
-            DrawInfoText();
 
             base.Draw(gameTime);
         }
