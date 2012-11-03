@@ -45,7 +45,7 @@ namespace Projection
         #region Derived class interface
 
         public abstract bool RequiresUpdate { get; }
-        public virtual void Update(GameTime gameTime, MouseState mouseState, KeyboardState keyState, List<Object3D> objects)
+        public virtual void Update(GameTime gameTime, MouseState mouseState, KeyboardState keyboardState, List<Object3D> objects)
         {
             if (this.RequiresUpdate)
                 throw new Exception("Derived class requires update but has not implemented it");
@@ -96,6 +96,13 @@ namespace Projection
             return mouseVectorTranslated;
         }
 
+        public void Zoom(float zoomFactor, Vector3 atTarget)
+        {
+            var relativePosition = this.Position - atTarget;
+            relativePosition = relativePosition.GetWithNewLength(relativePosition.Length()*zoomFactor);
+            this.SetPosition(relativePosition + atTarget);
+        }
+
         public Quaternion Rotate(Vector3 axis, float angle, Vector3 aroundTarget)
         {
             var rotation = Quaternion.CreateFromAxisAngle(axis, -angle);
@@ -129,25 +136,22 @@ namespace Projection
             this.Rotate(rotation, aroundTarget);
         }
 
-        public bool Rotate(ref Vector3 startArcBallVector, ref Vector3 endArcBallVector, Vector3 aroundTarget)
+        public Vector3? Rotate(Vector3 startArcBallVector, Vector3 endArcBallVector, Vector3 aroundTarget, float rotateSpeed)
         {
-            var angle = startArcBallVector.AngleWith(endArcBallVector) * 1f;
+            var angle = startArcBallVector.AngleWith(endArcBallVector) * rotateSpeed;
             if (angle > 0)
             {
                 var axis = Vector3.Cross(startArcBallVector, endArcBallVector);
                 if (!axis.IsValid())    //If startArcBallVector and endArcBallVector does not have angle then Cross returns NaN
-                    return false;
+                    return null;
 
                 axis.Normalize();
 
                 var rotation = this.Rotate(axis, angle, aroundTarget);
 
-                endArcBallVector = Vector3.Transform(endArcBallVector, rotation);
-                startArcBallVector = new Vector3(endArcBallVector.X, endArcBallVector.Y, endArcBallVector.Z);
-
-                return true;
+                return Vector3.Transform(endArcBallVector, rotation);
             }
-            else return false;
+            else return null;
         }
 
         

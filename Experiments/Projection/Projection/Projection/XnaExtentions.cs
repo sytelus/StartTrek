@@ -55,6 +55,12 @@ namespace Projection
             return new Vector3(vector.X, 0, 0);
         }
 
+        public static Vector3 GetWithNewLength(this Vector3 vector, float newLength)
+        {
+            var lengthFactor = newLength / vector.Length();
+            return new Vector3(vector.X * lengthFactor, vector.Y * lengthFactor, vector.Z * lengthFactor);
+        }
+
         public static float AngleWith(this Vector3 vector, Vector3 anotherVector, bool inRadiance = true)
         {
             const float closeTo1 = 1 - 1E-3f;
