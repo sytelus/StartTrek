@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Drawing;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
@@ -25,12 +26,43 @@ namespace Projection
             }
         }
 
+        public static Vector3 Clone(this Vector3 vector)
+        {
+            return new Vector3(vector.X, vector.Y, vector.Z);
+        }
+
+        public static bool IsValid(this Vector3 vector)
+        {
+            return !(double.IsNaN(vector.X) || double.IsNaN(vector.Y) || double.IsNaN(vector.Z)) ;
+        }
+
+        public static void Validate(this Vector3 vector)
+        {
+            if (!IsValid(vector))
+                throw new Exception(string.Format("Vector {0} is not valid", vector.ToString()));
+        }
+
+        public static Vector3 GetZVector(this Vector3 vector)
+        {
+            return new Vector3(0, 0, vector.Z);
+        }
+        public static Vector3 GetYVector(this Vector3 vector)
+        {
+            return new Vector3(0, vector.Y, 0);
+        }
+        public static Vector3 GetXVector(this Vector3 vector)
+        {
+            return new Vector3(vector.X, 0, 0);
+        }
+
         public static float AngleWith(this Vector3 vector, Vector3 anotherVector, bool inRadiance = true)
         {
+            const float closeTo1 = 1 - 1E-3f;
+
             var normalizedDotProduct = Vector3.Dot(vector, anotherVector)/vector.Length()/anotherVector.Length();
-            if (normalizedDotProduct > 1)   //happens because of rounding
+            if (normalizedDotProduct > closeTo1)   //normalized dot product can have bad rounding errors
                 normalizedDotProduct = 1;
-            else if (normalizedDotProduct < -1)
+            else if (normalizedDotProduct < -closeTo1)
                 normalizedDotProduct = -1;
 
             var angleInRadiance = (float) Math.Acos(normalizedDotProduct);

@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Windows.Forms;
 using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Audio;
 using Microsoft.Xna.Framework.Content;
@@ -9,6 +10,8 @@ using Microsoft.Xna.Framework.GamerServices;
 using Microsoft.Xna.Framework.Graphics;
 using Microsoft.Xna.Framework.Input;
 using Microsoft.Xna.Framework.Media;
+using ButtonState = Microsoft.Xna.Framework.Input.ButtonState;
+using Keys = Microsoft.Xna.Framework.Input.Keys;
 
 namespace Projection
 {
@@ -18,23 +21,27 @@ namespace Projection
     public class Game1 : Game
     {
         GraphicsDeviceManager graphics;
+        
         Camera camera;
-        Object3D object3D;
+        List<Object3D> objects = new List<Object3D>();
+
+        private Vector3 rotationOrigin = Vector3.Zero;
+
         Effect effect;
         private SpriteBatch spriteBatch;
         private SpriteFont spriteFont;
         private readonly Vector2 fontPos  = new Vector2(1.0f, 1.0f);
         private float arcBallRadius, screenWidth, screenHeight;
 
-        public static readonly Vector3 SpaceSize = new Vector3(20,20,20);
-
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
             Content.RootDirectory = "Content";
 
-            Window.AllowUserResizing = true;
             Window.ClientSizeChanged += Window_ClientSizeChanged;
+            Window.AllowUserResizing = true;
+            var form = (Form)Control.FromHandle(Window.Handle);
+            form.WindowState = FormWindowState.Maximized;
 
             this.IsMouseVisible = true;
         }
@@ -47,19 +54,29 @@ namespace Projection
         /// </summary>
         protected override void Initialize()
         {
-            object3D = new Object3D(graphics.GraphicsDevice, SpaceSize, new Vector3(0, 0, SpaceSize.Z / 2));
-            ResetCamera();
-
+            ResetScene();
             Window_ClientSizeChanged(null, EventArgs.Empty); 
-            
             base.Initialize();
         }
 
-        private readonly Vector3 cameraStartingPos = Vector3.Zero;
-        private void ResetCamera()
+        private void ResetScene()
         {
-            if (camera == null || camera.Position != cameraStartingPos)
-                camera = new Camera(cameraStartingPos, object3D.Center, Vector3.Up, graphics.GraphicsDevice.Viewport.AspectRatio, 0.05f, 1000f);
+            objects.Clear();
+
+            var cube = new Cube(graphics.GraphicsDevice
+                , position: rotationOrigin    //We'll rotate around origin so place object there
+                , bounds: new Vector3(20, 20, 20));
+
+            var cameraPosition = cube.Position - cube.Bounds.GetZVector()*5; //Stay away 10X the width of cube
+            var cameraUp = Vector3.Cross(Vector3.Normalize(cameraPosition - cube.Position), Vector3.Right);
+            if (cameraUp.LengthSquared() < 1E-02)
+                cameraUp = Vector3.Cross(Vector3.Normalize(cameraPosition - cube.Position), Vector3.Up);
+
+            if (camera == null || camera.Position != cameraPosition)
+                camera = new Camera(graphics.GraphicsDevice, cameraPosition, cube.Position, cameraUp, graphics.GraphicsDevice.Viewport.AspectRatio, 0.05f, 1E+5f);
+
+            objects.Add(cube);
+            objects.Add(camera);
         }
 
         protected override void LoadContent()
@@ -80,7 +97,6 @@ namespace Projection
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
-            // Allows the game to exit
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
@@ -88,7 +104,7 @@ namespace Projection
             HandleMouseInput(gameTime);
 
             if ((userActivityState & UserActivityState.Rotate) == UserActivityState.Rotate)
-                camera.Rotate(ref mouseRotationStart, ref mouseRotationEnd, object3D.Center);
+                camera.Rotate(ref mouseRotationStart, ref mouseRotationEnd, rotationOrigin);
 
             base.Update(gameTime);
         }
@@ -114,16 +130,14 @@ namespace Projection
                 {
                     userActivityState |= UserActivityState.Rotate;
                     var mouseStartVector = GetMouseArcBallVector(mouseState);
-                    camera.DebugMessages["mouseStartVector"] = mouseStartVector.ToString();
-                    mouseRotationStart = camera.GetMouseProjectionOnArcBall(mouseStartVector, object3D.Center);
+                    mouseRotationStart = camera.GetMouseProjectionOnArcBall(mouseStartVector, rotationOrigin);
                     mouseRotationEnd = mouseRotationStart;
                     mouseDownCount++;
                 }
                 else //Mouse move while left down
                 {
                     var mouseEndVector = GetMouseArcBallVector(mouseState);
-                    camera.DebugMessages["mouseEndVector"] = mouseEndVector.ToString();
-                    mouseRotationEnd = camera.GetMouseProjectionOnArcBall(mouseEndVector, object3D.Center);
+                    mouseRotationEnd = camera.GetMouseProjectionOnArcBall(mouseEndVector, rotationOrigin);
                 }
             }
             else
@@ -149,7 +163,7 @@ namespace Projection
 
         private void HandleKeyboardInput(GameTime gameTime)
         {
-            const float moveScale = 1.5f / 100;
+            const float moveScale = 0.07f;
             const float rotateScale = MathHelper.PiOver2 / 100;
             const float rotateScale2 = MathHelper.PiOver2 / 1000;
 
@@ -157,36 +171,36 @@ namespace Projection
             var keyState = Keyboard.GetState();
 
             if (keyState.IsKeyDown(Keys.R))
-                ResetCamera();
+                ResetScene();
 
             if (keyState.IsKeyDown(Keys.LeftControl) || keyState.IsKeyDown(Keys.RightControl))
             {
                 if (keyState.IsKeyDown(Keys.Right))
-                    camera.Rotate(rotateScale2, object3D.Center);
+                    camera.Rotate(new Vector3(0, rotateScale2, 0), rotationOrigin); 
                 if (keyState.IsKeyDown(Keys.Left))
-                    camera.Rotate(-rotateScale2, object3D.Center);
+                    camera.Rotate(new Vector3(0, -rotateScale2, 0), rotationOrigin);
                 if (keyState.IsKeyDown(Keys.Up))
-                    camera.Rotate(rotateScale2, object3D.Center);
+                    camera.Rotate(new Vector3(rotateScale2, 0, 0), rotationOrigin);
                 if (keyState.IsKeyDown(Keys.Down))
-                    camera.Rotate(-rotateScale2, object3D.Center);
+                    camera.Rotate(new Vector3(-rotateScale2, 0, 0), rotationOrigin); 
             }
             else if (keyState.IsKeyDown(Keys.LeftShift) || keyState.IsKeyDown(Keys.RightShift))
             {
                 if (keyState.IsKeyDown(Keys.Right))
-                    camera.Rotate(new Vector3(0, MathHelper.WrapAngle(rotateScale), 0));
+                    camera.Rotate(new Vector3(0, rotateScale, 0));
                 if (keyState.IsKeyDown(Keys.Left))
-                    camera.Rotate(new Vector3(0, MathHelper.WrapAngle(-rotateScale), 0));
+                    camera.Rotate(new Vector3(0, -rotateScale, 0));
                 if (keyState.IsKeyDown(Keys.Up))
-                    camera.Rotate(new Vector3(MathHelper.WrapAngle(rotateScale), 0, 0));
+                    camera.Rotate(new Vector3(rotateScale, 0, 0));
                 if (keyState.IsKeyDown(Keys.Down))
-                    camera.Rotate(new Vector3(MathHelper.WrapAngle(-rotateScale), 0, 0));
+                    camera.Rotate(new Vector3(-rotateScale, 0, 0));
             }
             else
             {
                 if (keyState.IsKeyDown(Keys.Right))
-                    camera.MoveTo(new Vector3(moveScale, 0, 0));
-                if (keyState.IsKeyDown(Keys.Left))
                     camera.MoveTo(new Vector3(-moveScale, 0, 0));
+                if (keyState.IsKeyDown(Keys.Left))
+                    camera.MoveTo(new Vector3(moveScale, 0, 0));
                 if (keyState.IsKeyDown(Keys.Up))
                     camera.MoveTo(new Vector3(0, 0, moveScale));
                 if (keyState.IsKeyDown(Keys.Down))
@@ -201,10 +215,10 @@ namespace Projection
             var infoText = new StringBuilder();
             infoText.AppendLine(string.Format("Camera Pos: {0}, {1}, {2}", camera.Position.X, camera.Position.Y, camera.Position.Z));
             infoText.AppendLine(string.Format("Camera Forward: {0}, {1}, {2}, {3}", camera.ViewMatrix.Forward.X, camera.ViewMatrix.Forward.Y, camera.ViewMatrix.Forward.Z, camera.ViewMatrix.Forward.Length()));
-            infoText.AppendLine(string.Format("Camera Up: {0}, {1}, {2}, {3}", camera.Up.X, camera.Up.Y, camera.Up.Z, camera.Up.Length()));
+            infoText.AppendLine(string.Format("Camera Up: {0}, {1}, {2}, {3}", camera.ViewMatrix.Up.X, camera.ViewMatrix.Up.Y, camera.ViewMatrix.Up.Z, camera.ViewMatrix.Up.Length()));
             infoText.AppendLine(string.Format("Camera Right: {0}, {1}, {2}, {3}", camera.ViewMatrix.Right.X, camera.ViewMatrix.Right.Y, camera.ViewMatrix.Right.Z, camera.ViewMatrix.Right.Length()));
             infoText.AppendLine(string.Format("Mouse: {0}, {1}", mouseState.X, mouseState.Y));
-            infoText.AppendLine(string.Format("Distance: {0}", (object3D.Center - camera.Position).Length()));
+            infoText.AppendLine(string.Format("Distance: {0}", (rotationOrigin - camera.Position).Length()));
             infoText.AppendLine(string.Format("Camera Basis Angles: {0}, {1}, {2}", camera.ViewMatrix.Forward.AngleWith(camera.Up, false), camera.Up.AngleWith(camera.ViewMatrix.Left, false), camera.ViewMatrix.Left.AngleWith(camera.ViewMatrix.Forward, false)));
 
             foreach (var debugMessage in camera.DebugMessages)
@@ -246,7 +260,9 @@ namespace Projection
             foreach (var pass in effect.CurrentTechnique.Passes)
             {
                 pass.Apply();
-                object3D.Draw(camera);
+
+                foreach(var object3D in this.objects)
+                    object3D.Draw();
             }
            
             DrawInfoText();
