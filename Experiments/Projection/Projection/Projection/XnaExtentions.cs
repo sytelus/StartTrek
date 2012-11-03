@@ -136,7 +136,7 @@ namespace Projection
 
         private static KnownColor[] knownColorNames = (KnownColor[])Enum.GetValues(typeof(System.Drawing.KnownColor));
         private static Random random = new Random(42);
-        internal static Microsoft.Xna.Framework.Color GetRandomColor()
+        public static Microsoft.Xna.Framework.Color GetRandomColor()
         {
             var randomColorName = knownColorNames[random.Next(knownColorNames.Length)];
             var color = System.Drawing.Color.FromKnownColor(randomColorName);

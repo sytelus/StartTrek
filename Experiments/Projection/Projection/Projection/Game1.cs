@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
 using System.Text;
 using System.Windows.Forms;
@@ -59,9 +60,21 @@ namespace Projection
         }
 
         Vector3 rotationOrigin = Vector3.Zero;
+        private enum SceneType {ArrowField = 1, Cube = 0}
+        private SceneType currentScene = (SceneType)0;
         private void ResetScene(bool loadContent)
         {
-            this.scene = new SingleCubeScene(this.graphics.GraphicsDevice, rotationOrigin, 20);
+            switch (currentScene)
+            {
+                case SceneType.Cube:
+                    this.scene = new SingleCubeScene(this.graphics.GraphicsDevice, rotationOrigin, 20);
+                    break;
+                case SceneType.ArrowField:
+                    this.scene = new ArrowFieldScene(this.graphics.GraphicsDevice, rotationOrigin);
+                    break;
+                default:
+                    throw new Exception(string.Format("Unsupported scene type {0}", currentScene));
+            }
 
             //Create camera
             var cameraPosition = scene.SuggestedInitialCameraPosition;
@@ -97,10 +110,7 @@ namespace Projection
             var keyState = Keyboard.GetState();
 
             //Keyboard shortcuts
-            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
-                this.Exit();
-            if (keyState.IsKeyDown(Keys.R))
-                ResetScene(true);
+            HandleKeyboardShortcuts(keyState);
 
             //Update objects
             scene.Update(gameTime, mouseState, keyState);
@@ -109,6 +119,24 @@ namespace Projection
             cameraControls.Update(gameTime, mouseState, keyState, scene.Objects);
 
             base.Update(gameTime);
+        }
+
+        private Stopwatch keyDelay = Stopwatch.StartNew();
+        private void HandleKeyboardShortcuts(KeyboardState keyState)
+        {
+            if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
+                this.Exit();
+            if (keyState.IsKeyDown(Keys.R) && keyDelay.ElapsedMilliseconds > 400)
+            {
+                ResetScene(true);
+                keyDelay.Restart();
+            }
+            if (keyState.IsKeyDown(Keys.S) && keyDelay.ElapsedMilliseconds > 400)
+            {
+                currentScene = (SceneType) (((int) currentScene + 1)%2);
+                ResetScene(true);
+                keyDelay.Restart();
+            }
         }
 
         private void Window_ClientSizeChanged(object sender, EventArgs e)

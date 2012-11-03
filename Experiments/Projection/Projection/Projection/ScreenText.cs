@@ -122,6 +122,7 @@ Shift+Keys -> Tilt
 Keys Or Right Mouse -> Pan
 F1 -> Show Hide Help
 D -> Show Hide Debug Info
+S -> Cycle through scenes
 ";
     }
 }

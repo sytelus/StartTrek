@@ -10,14 +10,23 @@ namespace Projection
     public class Cube : Object3D
     {
         private Vector3 halfWidth;
+        private float[] vertexMultipliers;
+        private Color[] vertexColors;
         private VertexBuffer vertexBuffer;
         private IndexBuffer indexBuffer;
 
-        public Cube(GraphicsDevice graphicsDevice, Vector3 position, Vector3 bounds)
+        public static readonly float[] DefaultVertexMultipliers = new float[] {1,1,1,1,1,1,1,1};
+        public static readonly Color[] DefaultVertexColors = new Color[] { Color.Black, Color.Red, Color.Yellow, Color.Green, Color.Blue, Color.Magenta, Color.White, Color.Cyan };
+
+        public Cube(GraphicsDevice graphicsDevice, Vector3 position, Vector3 bounds, float[] vertexMultipliers = null, Color[] vertexColors = null)
             : base(graphicsDevice, position, position, Vector3.Up)
         {
             this.Bounds = bounds;
             this.halfWidth = bounds/2;
+
+            this.vertexMultipliers = vertexMultipliers ?? DefaultVertexMultipliers;
+            this.vertexColors = vertexColors ?? DefaultVertexColors;
+
             BuildVertexBuffer();
         }
 
@@ -46,8 +55,8 @@ namespace Projection
 
         private VertexPositionColor[] GetObjectVertices()
         {
-            var minPoint = this.Position - halfWidth;
-            var maxPoint = this.Position + halfWidth;
+            var minPoint = -halfWidth;
+            var maxPoint = halfWidth;
 
             var cubeVertices = new VertexPositionColor[8];
 
@@ -60,14 +69,11 @@ namespace Projection
             cubeVertices[6].Position = new Vector3(maxPoint.X, maxPoint.Y, maxPoint.Z);
             cubeVertices[7].Position = new Vector3(maxPoint.X, maxPoint.Y, minPoint.Z);
 
-            cubeVertices[0].Color = Color.Black;
-            cubeVertices[1].Color = Color.Red;
-            cubeVertices[2].Color = Color.Yellow;
-            cubeVertices[3].Color = Color.Green;
-            cubeVertices[4].Color = Color.Blue;
-            cubeVertices[5].Color = Color.Magenta;
-            cubeVertices[6].Color = Color.White;
-            cubeVertices[7].Color = Color.Cyan;
+            for (var vertexIndex = 0; vertexIndex < cubeVertices.Length; vertexIndex++ )
+            {
+                cubeVertices[vertexIndex].Position = (cubeVertices[vertexIndex].Position * this.vertexMultipliers[vertexIndex]) + this.Position;
+                cubeVertices[vertexIndex].Color = this.vertexColors[vertexIndex];
+            }
 
             return cubeVertices;
         }
