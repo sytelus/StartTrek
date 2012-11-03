@@ -38,7 +38,7 @@ namespace Projection
             this.arcBallRadius = (this.screenWidth + this.screenHeight) / 4;
         }
 
-        public void Update(GameTime gameTime, MouseState mouseState, KeyboardState keyboardState, List<Object3D> objects)
+        public void Update(GameTime gameTime, MouseState mouseState, KeyboardState keyboardState, IEnumerable<Object3D> objects)
         {
             HandleKeyboardInput(gameTime, keyboardState);
 

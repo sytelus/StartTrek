@@ -21,10 +21,9 @@ namespace Projection
     public class Game1 : Game
     {
         GraphicsDeviceManager graphics;
-        
+
+        private Scene scene;
         Camera camera;
-        List<Object3D> objects = new List<Object3D>();
-        List<Object3D> updatableObjects = new List<Object3D>();
         private IObject3DControls cameraControls;
 
         Effect effect;
@@ -62,51 +61,33 @@ namespace Projection
         Vector3 rotationOrigin = Vector3.Zero;
         private void ResetScene(bool loadContent)
         {
-            this.objects.Clear();
-
-            //Create cube
-            var cube = new Cube(graphics.GraphicsDevice
-                , position: rotationOrigin    //We'll rotate around origin so place object there
-                , bounds: new Vector3(20, 20, 20));
+            this.scene = new SingleCubeScene(this.graphics.GraphicsDevice, rotationOrigin, 20);
 
             //Create camera
-            var cameraPosition = cube.Position - cube.Bounds.GetZVector()*5; //Stay away 10X the width of cube
-            var cameraUp = Vector3.Normalize((cameraPosition - cube.Position).SafeCross(Vector3.Right, Vector3.Up));
-            camera = new Camera(graphics.GraphicsDevice, cameraPosition, cube.Position, cameraUp, graphics.GraphicsDevice.Viewport.AspectRatio, 0.05f, 1E+5f);
+            var cameraPosition = scene.SuggestedInitialCameraPosition;
+            var cameraUp = Vector3.Normalize((cameraPosition - rotationOrigin).SafeCross(Vector3.Right, Vector3.Up));
+            camera = new Camera(graphics.GraphicsDevice, cameraPosition, rotationOrigin, cameraUp, graphics.GraphicsDevice.Viewport.AspectRatio, 0.05f, 1E+5f);
 
             //Create help/debug text
             var screenText = new ScreenText(graphics.GraphicsDevice, new Vector3(1.0f, 1.0f, 0), camera);
 
             //Create controls
             cameraControls = new ArcBallControls(camera, rotationOrigin, graphics.GraphicsDevice.Viewport.Width, graphics.GraphicsDevice.Viewport.Height);
- 
-            this.objects.Add(cube);
-            this.objects.Add(camera);
-            this.objects.Add(screenText);
 
-            this.SetUpdatableObjects();
+            this.scene.AddObject(camera);
+            this.scene.AddObject(screenText);
 
             if (loadContent)
-            {
-                foreach (var object3D in objects)
-                {
-                    object3D.LoadContent(this.Content);
-                }
-            }
+                this.scene.LoadContent(this.Content);
         }
 
-        private void SetUpdatableObjects()
-        {
-            this.updatableObjects = objects.Where(o => o.RequiresUpdate).ToList();
-        }
 
         protected override void LoadContent()
         {
             effect = Content.Load<Effect>(@"ReallyBasicEffect");
 
-            foreach (var object3D in this.objects)
-                object3D.LoadContent(Content);
-
+            this.scene.LoadContent(this.Content);
+            
             base.LoadContent();
         }
 
@@ -122,11 +103,10 @@ namespace Projection
                 ResetScene(true);
 
             //Update objects
-            foreach (var updatableObject in updatableObjects)
-                updatableObject.Update(gameTime, mouseState, keyState, this.objects);
+            scene.Update(gameTime, mouseState, keyState);
 
             //Update controls
-            cameraControls.Update(gameTime, mouseState, keyState, this.objects);
+            cameraControls.Update(gameTime, mouseState, keyState, scene.Objects);
 
             base.Update(gameTime);
         }
@@ -156,8 +136,7 @@ namespace Projection
             {
                 pass.Apply();
 
-                foreach(var object3D in this.objects)
-                    object3D.Draw();
+                scene.Draw();
             }
 
             base.Draw(gameTime);

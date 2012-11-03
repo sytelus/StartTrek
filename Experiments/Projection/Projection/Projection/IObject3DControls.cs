@@ -7,6 +7,6 @@ namespace Projection
     public interface IObject3DControls
     {
         void UpdateScreenDimentions(float screenWidth, float screenHeight);
-        void Update(GameTime gameTime, MouseState mouseState, KeyboardState keyboardState, List<Object3D> objects);
+        void Update(GameTime gameTime, MouseState mouseState, KeyboardState keyboardState, IEnumerable<Object3D> objects);
     }
 }
