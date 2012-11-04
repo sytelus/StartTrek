@@ -78,6 +78,7 @@
     <Compile Include="ArrowFieldScene.cs" />
     <Compile Include="Camera.cs" />
     <Compile Include="Cube.cs" />
+    <Compile Include="FpsCounter.cs" />
     <Compile Include="IObject3DControls.cs" />
     <Compile Include="Object3D.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

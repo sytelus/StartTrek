@@ -25,6 +25,8 @@ namespace Projection
 
         public Camera Camera { get; set; }
         private DebugLevelType? lastDebugLevel;
+        private FpsCounter fpsCounter = new FpsCounter();
+
         public ScreenText(GraphicsDevice graphicsDevice, string name, Vector3 position, Camera camera)
             :base(graphicsDevice, name, position, Vector3.Zero, Vector3.Up)
         {
@@ -57,6 +59,8 @@ namespace Projection
         StringBuilder screenText = new StringBuilder();
         public override void Update(GameTime gameTime, MouseState mouseState, KeyboardState keyState, List<Object3D> objects)
         {
+            fpsCounter.OnUpdate(gameTime);
+
             if (this.lastDebugLevel != this.DebugLevel)
                 RebuildScreenText(mouseState, objects);
         }
@@ -86,6 +90,7 @@ namespace Projection
         private void RebuildInfoText(MouseState mouseState, List<Object3D> objects)
         {
             screenText.Clear();
+            screenText.AppendLine(string.Format("FPS: {0}", this.fpsCounter.Rate));
             screenText.AppendLine(string.Format("Camera Pos: {0}, {1}, {2}", this.Camera.Position.X, this.Camera.Position.Y, this.Camera.Position.Z));
             screenText.AppendLine(string.Format("Camera Forward: {0}, {1}, {2}, {3}", this.Camera.ViewMatrix.Forward.X, this.Camera.ViewMatrix.Forward.Y, this.Camera.ViewMatrix.Forward.Z, this.Camera.ViewMatrix.Forward.Length()));
             screenText.AppendLine(string.Format("Camera Up: {0}, {1}, {2}, {3}", this.Camera.ViewMatrix.Up.X, this.Camera.ViewMatrix.Up.Y, this.Camera.ViewMatrix.Up.Z, this.Camera.ViewMatrix.Up.Length()));
@@ -108,6 +113,8 @@ namespace Projection
 
         public override void Draw()
         {
+            fpsCounter.OnDraw();
+
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Additive);
             spriteBatch.DrawString(spriteFont, screenText.ToString(), new Vector2(this.Position.X, this.Position.Y), Color.Yellow);
             spriteBatch.End();
