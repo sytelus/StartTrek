@@ -80,9 +80,12 @@ namespace Projection
             }
         }
 
-        public void MoveTo(Vector3 deltaPosition)
+        public Vector3 MoveTo(Vector3 deltaPosition)
         {
-            this.SetPosition(this.Position + this.Right() * deltaPosition.X + this.Up * deltaPosition.Y + this.Forward * deltaPosition.Z);
+            var displacement = this.Right()*deltaPosition.X + this.Up*deltaPosition.Y + this.Forward*deltaPosition.Z;
+            this.SetPosition(this.Position + displacement);
+
+            return displacement;
         }
 
         public Vector3 GetMouseProjectionOnArcBall(Vector3 normalizedMouseVector, Vector3 aroundTarget)
@@ -124,11 +127,13 @@ namespace Projection
             this.Rotate(rotation);
         }
 
-        public void Rotate(Vector3 deltaRotation)
+        public Quaternion Rotate(Vector3 deltaRotation)
         {
             var rotation = GetRotation(deltaRotation);
 
             this.Rotate(rotation);
+
+            return rotation;
         }
 
         private Quaternion GetRotation(Vector3 deltaRotation)
@@ -144,10 +149,11 @@ namespace Projection
             return Vector3.Cross(this.Up, this.Forward);
         }
 
-        public void Rotate(Vector3 deltaRotation, Vector3 aroundTarget)
+        public Quaternion Rotate(Vector3 deltaRotation, Vector3 aroundTarget)
         {
             var rotation = GetRotation(deltaRotation);
             this.Rotate(rotation, aroundTarget);
+            return rotation;
         }
 
         public Vector3? Rotate(Vector3 startArcBallVector, Vector3 endArcBallVector, Vector3 aroundTarget, float rotateSpeed)

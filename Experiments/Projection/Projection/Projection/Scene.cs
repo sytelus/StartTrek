@@ -17,12 +17,13 @@ namespace Projection
         public GraphicsDevice GraphicsDevice { get; private set; }
         public Vector3 Center { get; protected set; }
 
-        public abstract Vector3 SuggestedInitialCameraPosition { get; }
+        public RecommandedSceneSettings RecommandedSettings { get; private set; }
 
         protected Scene(GraphicsDevice graphicsDevice, Vector3 center)
         {
             this.GraphicsDevice = graphicsDevice;
             this.Center = center;
+            RecommandedSettings = new RecommandedSceneSettings();
         }
 
         public void LoadContent(ContentManager content)
@@ -67,6 +68,12 @@ namespace Projection
         public IEnumerable<Object3D> UpdatableObjects
         {
             get { return this.updatableObjects; }
+        }
+
+        public class RecommandedSceneSettings
+        {
+            public Vector3 CameraPosition { get; set; }
+            public bool ArcBallOriginLocked { get; set; }
         }
     }
 }

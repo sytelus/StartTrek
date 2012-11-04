@@ -77,7 +77,7 @@ namespace Projection
             }
 
             //Create camera
-            var cameraPosition = scene.SuggestedInitialCameraPosition;
+            var cameraPosition = scene.RecommandedSettings.CameraPosition;
             var cameraUp = Vector3.Normalize((rotationOrigin - cameraPosition).SafeCross(Vector3.Right, Vector3.Up));
             camera = new Camera(graphics.GraphicsDevice, cameraPosition, rotationOrigin, cameraUp, graphics.GraphicsDevice.Viewport.AspectRatio, 0.05f, 1E+5f);
 
@@ -85,7 +85,7 @@ namespace Projection
             var screenText = new ScreenText(graphics.GraphicsDevice, new Vector3(1.0f, 1.0f, 0), camera);
 
             //Create controls
-            cameraControls = new ArcBallControls(camera, rotationOrigin, graphics.GraphicsDevice.Viewport.Width, graphics.GraphicsDevice.Viewport.Height);
+            cameraControls = new ArcBallControls(camera, rotationOrigin, scene.RecommandedSettings.ArcBallOriginLocked, graphics.GraphicsDevice.Viewport.Width, graphics.GraphicsDevice.Viewport.Height);
 
             this.scene.AddObject(camera);
             this.scene.AddObject(screenText);

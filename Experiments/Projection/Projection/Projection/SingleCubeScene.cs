@@ -19,11 +19,9 @@ namespace Projection
                 , bounds: new Vector3(cubeWidth, cubeWidth, cubeWidth));
 
             this.AddObject(cube);
-        }
 
-        public override Vector3 SuggestedInitialCameraPosition
-        {
-            get { return this.Center + this.cube.Bounds.GetZVector() * 3; }   //Stay away 10X the width of cube
+            this.RecommandedSettings.CameraPosition = this.Center + this.cube.Bounds.GetZVector() * 3;
+            this.RecommandedSettings.ArcBallOriginLocked = true;
         }
     }
 }

@@ -26,12 +26,10 @@ namespace Projection
                                     );
 
                 this.AddObject(cube);
-            }
-        }
 
-        public override Vector3 SuggestedInitialCameraPosition
-        {
-            get { return new Vector3(0, 0, 500); }
+                this.RecommandedSettings.CameraPosition = new Vector3(0, 0, 500);
+                this.RecommandedSettings.ArcBallOriginLocked = false;
+            }
         }
     }
 }

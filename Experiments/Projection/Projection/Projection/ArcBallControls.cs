@@ -10,17 +10,19 @@ namespace Projection
     public class ArcBallControls : IObject3DControls
     {
         private readonly Object3D object3D;
-        private readonly Vector3 rotationOrigin;
+        public Vector3 ArcBallOrigin { get; set; }
+        public bool ArcBallOriginLocked { get; set; }
 
         public float RotateSpeed { get; set; }
         public float PanSpeed { get; set; }
         public float ZoomSpeed { get; set; }
         public float MaxZoom { get; set; }
 
-        public ArcBallControls(Object3D object3D, Vector3 rotationOrigin, float screenWidth, float screenHeight)
+        public ArcBallControls(Object3D object3D, Vector3 arcBallOrigin, bool arcBallOriginLocked, float screenWidth, float screenHeight)
         {
             this.object3D = object3D;
-            this.rotationOrigin = rotationOrigin;
+            this.ArcBallOrigin = arcBallOrigin;
+            this.ArcBallOriginLocked = arcBallOriginLocked;
             
             this.RotateSpeed = 1.5f;
             this.ZoomSpeed = 1f;
@@ -91,7 +93,7 @@ namespace Projection
                     var panAmount = (mousePanStart - mousePanEnd) * this.PanSpeed;
                     if (panAmount.LengthSquared() > 0)
                     {
-                        object3D.MoveTo(panAmount);
+                        this.MoveTo(panAmount);
                         mousePanStart = mousePanEnd;
                     }
                 }
@@ -116,7 +118,7 @@ namespace Projection
                     var zoomFactor = (float) Math.Pow(MaxZoom, (mouseZoomEnd - mouseZoomStart) / screenHeight) * this.ZoomSpeed;
                     if (Math.Abs(zoomFactor - 0) > 1E-3)
                     {
-                        object3D.Zoom(zoomFactor, rotationOrigin);
+                        object3D.Zoom(zoomFactor, ArcBallOrigin);
                         mouseZoomStart = mouseZoomEnd;
                     }
                 }
@@ -134,13 +136,13 @@ namespace Projection
                 {
                     mouseActivityState |= MouseActivityState.MouseRotate;
                     var mouseVector = GetMouseArcBallVector(mouseState);
-                    mouseRotationStart = object3D.GetMouseProjectionOnArcBall(mouseVector, rotationOrigin);
+                    mouseRotationStart = object3D.GetMouseProjectionOnArcBall(mouseVector, ArcBallOrigin);
                 }
                 else //Mouse move while left down
                 {
                     var mouseVector = GetMouseArcBallVector(mouseState);
-                    mouseRotationEnd = object3D.GetMouseProjectionOnArcBall(mouseVector, rotationOrigin);
-                    var rotatedMouseRotationEnd = object3D.Rotate(mouseRotationStart, mouseRotationEnd, this.rotationOrigin, this.RotateSpeed);
+                    mouseRotationEnd = object3D.GetMouseProjectionOnArcBall(mouseVector, ArcBallOrigin);
+                    var rotatedMouseRotationEnd = object3D.Rotate(mouseRotationStart, mouseRotationEnd, this.ArcBallOrigin, this.RotateSpeed);
                     if (rotatedMouseRotationEnd != null)
                     {
                         mouseRotationEnd = rotatedMouseRotationEnd.Value;
@@ -162,48 +164,65 @@ namespace Projection
             if (keyboardState.IsKeyDown(Keys.LeftControl) || keyboardState.IsKeyDown(Keys.RightControl))  //Rotate
             {
                 if (keyboardState.IsKeyDown(Keys.Right))
-                    object3D.Rotate(new Vector3(0, -rotateSpeed, 0), rotationOrigin);
+                    object3D.Rotate(new Vector3(0, -rotateSpeed, 0), ArcBallOrigin);
                 if (keyboardState.IsKeyDown(Keys.Left))
-                    object3D.Rotate(new Vector3(0, rotateSpeed, 0), rotationOrigin);
+                    object3D.Rotate(new Vector3(0, rotateSpeed, 0), ArcBallOrigin);
                 if (keyboardState.IsKeyDown(Keys.Up))
-                    object3D.Rotate(new Vector3(-rotateSpeed, 0, 0), rotationOrigin);
+                    object3D.Rotate(new Vector3(-rotateSpeed, 0, 0), ArcBallOrigin);
                 if (keyboardState.IsKeyDown(Keys.Down))
-                    object3D.Rotate(new Vector3(rotateSpeed, 0, 0), rotationOrigin);
+                    object3D.Rotate(new Vector3(rotateSpeed, 0, 0), ArcBallOrigin);
                 if (keyboardState.IsKeyDown(Keys.PageUp))
-                    object3D.Rotate(new Vector3(0, 0, rotateSpeed), rotationOrigin);
+                    object3D.Rotate(new Vector3(0, 0, rotateSpeed), ArcBallOrigin);
                 if (keyboardState.IsKeyDown(Keys.PageDown))
-                    object3D.Rotate(new Vector3(0, 0, -rotateSpeed), rotationOrigin);
+                    object3D.Rotate(new Vector3(0, 0, -rotateSpeed), ArcBallOrigin);
             }
             else if (keyboardState.IsKeyDown(Keys.LeftShift) || keyboardState.IsKeyDown(Keys.RightShift)) //Tilt
             {
                 if (keyboardState.IsKeyDown(Keys.Right))
-                    object3D.Rotate(new Vector3(0, tiltSpeed, 0));
+                    this.Rotate(new Vector3(0, tiltSpeed, 0));
                 if (keyboardState.IsKeyDown(Keys.Left))
-                    object3D.Rotate(new Vector3(0, -tiltSpeed, 0));
+                    this.Rotate(new Vector3(0, -tiltSpeed, 0));
                 if (keyboardState.IsKeyDown(Keys.Up))
-                    object3D.Rotate(new Vector3(tiltSpeed, 0, 0));
+                    this.Rotate(new Vector3(tiltSpeed, 0, 0));
                 if (keyboardState.IsKeyDown(Keys.Down))
-                    object3D.Rotate(new Vector3(-tiltSpeed, 0, 0));
+                    this.Rotate(new Vector3(-tiltSpeed, 0, 0));
                 if (keyboardState.IsKeyDown(Keys.PageUp))
-                    object3D.Rotate(new Vector3(0, 0, tiltSpeed));
+                    this.Rotate(new Vector3(0, 0, tiltSpeed));
                 if (keyboardState.IsKeyDown(Keys.PageDown))
-                    object3D.Rotate(new Vector3(0, 0, -tiltSpeed));
+                    this.Rotate(new Vector3(0, 0, -tiltSpeed));
             }
             else                                                                                //Pan
             {
                 if (keyboardState.IsKeyDown(Keys.Right))
-                    object3D.MoveTo(new Vector3(moveSpeed, 0, 0));
+                    this.MoveTo(new Vector3(moveSpeed, 0, 0));
                 if (keyboardState.IsKeyDown(Keys.Left))
-                    object3D.MoveTo(new Vector3(-moveSpeed, 0, 0));
+                    this.MoveTo(new Vector3(-moveSpeed, 0, 0));
                 if (keyboardState.IsKeyDown(Keys.Up))
-                    object3D.MoveTo(new Vector3(0, 0, moveSpeed));
+                    this.MoveTo(new Vector3(0, 0, moveSpeed));
                 if (keyboardState.IsKeyDown(Keys.Down))
-                    object3D.MoveTo(new Vector3(0, 0, -moveSpeed));
+                    this.MoveTo(new Vector3(0, 0, -moveSpeed));
                 if (keyboardState.IsKeyDown(Keys.PageUp))
-                    object3D.MoveTo(new Vector3(0, -moveSpeed, 0));
+                    this.MoveTo(new Vector3(0, -moveSpeed, 0));
                 if (keyboardState.IsKeyDown(Keys.PageDown))
-                    object3D.MoveTo(new Vector3(0, moveSpeed, 0));
+                    this.MoveTo(new Vector3(0, moveSpeed, 0));
             }
+        }
+
+        private void Rotate(Vector3 deltaRotation)
+        {
+            var rotation = object3D.Rotate(deltaRotation);
+            if (!this.ArcBallOriginLocked)
+            {
+                var relativeOrigin = this.ArcBallOrigin - object3D.Position;
+                ArcBallOrigin = object3D.Position + (Vector3.Transform(relativeOrigin, rotation));
+            }
+        }
+
+        private void MoveTo(Vector3 displacement)
+        {
+            var arcBallOriginDisplacement = object3D.MoveTo(displacement);
+            if (!this.ArcBallOriginLocked)
+                this.ArcBallOrigin += arcBallOriginDisplacement;
         }
 
     }
