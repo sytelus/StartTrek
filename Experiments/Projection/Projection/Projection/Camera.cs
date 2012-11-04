@@ -12,8 +12,8 @@ namespace Projection
     {
         public Matrix ProjectionMatrix { get; protected set; }
 
-        public Camera(GraphicsDevice graphicsDevice, Vector3 position, Vector3 lookAt, Vector3 up, float aspectRatio, float nearClip, float farClip)
-            : base(graphicsDevice, position, lookAt, up)
+        public Camera(GraphicsDevice graphicsDevice, string name, Vector3 position, Vector3 lookAt, Vector3 up, float aspectRatio, float nearClip, float farClip)
+            : base(graphicsDevice, name, position, lookAt, up)
         {
             Bounds = new Vector3(nearClip, nearClip, nearClip);
             ProjectionMatrix = Matrix.CreatePerspectiveFieldOfView(MathHelper.PiOver4, aspectRatio, nearClip, farClip);

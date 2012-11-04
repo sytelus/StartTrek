@@ -19,10 +19,12 @@ namespace Projection
 
         public Vector3 Bounds { get; protected set; }
 
-        protected Object3D(GraphicsDevice graphicsDevice, Vector3 position, Vector3 lookAt, Vector3 up)
+        public string Name { get; protected set; }
+
+        protected Object3D(GraphicsDevice graphicsDevice, string name, Vector3 position, Vector3 lookAt, Vector3 up)
         {
             this.GraphicsDevice = graphicsDevice;
-
+            this.Name = name;
             this.SetPosition(position);
             this.SetOrientation(up, Vector3.Normalize(lookAt - position));
             ResetViewMatrix();
@@ -54,7 +56,7 @@ namespace Projection
         }
         public virtual void Draw()
         {
-            //for derived class
+            DrawDebugLines();
         }
         public virtual void LoadContent(ContentManager content)
         {
@@ -62,6 +64,15 @@ namespace Projection
         }
 
         #endregion 
+
+        protected void DrawDebugLines()
+        {
+            if (this.debugLines != null && this.DebugLevel > 0)
+            {
+                var vertices = this.debugLines.SelectMany(l => l.Value).ToArray();
+                this.GraphicsDevice.DrawUserPrimitives(PrimitiveType.LineList, vertices, 0, vertices.Length/2);
+            }
+        }
 
         protected void ResetViewMatrix()
         {
@@ -165,6 +176,12 @@ namespace Projection
                 if (!axis.IsValid())    //If startArcBallVector and endArcBallVector does not have angle then Cross returns NaN
                     return null;
 
+                if (this.DebugLevel > 0)
+                {
+                    this.SetDebugLine("startArcBallVector", aroundTarget, aroundTarget + startArcBallVector * 200, Color.Azure);
+                    this.SetDebugLine("endArcBallVector", aroundTarget, aroundTarget + endArcBallVector * 200, Color.Blue);
+                }
+
                 axis.Normalize();
 
                 var rotation = this.Rotate(axis, angle, aroundTarget);
@@ -177,27 +194,39 @@ namespace Projection
         
         #region Lazy debug properties
         private Dictionary<string, string> debugMessages;
-        public Dictionary<string, string> DebugMessages
+        public void SetDebugMessage(string key, string message)
         {
-            get
-            {
-                if (debugMessages == null)
-                    debugMessages = new Dictionary<string, string>();
-                return debugMessages;
-            }
+            if (debugMessages == null)
+                debugMessages = new Dictionary<string, string>();
+
+            debugMessages[key] = message;
+        }
+        public Dictionary<string, string> GetDebugMessages()
+        {
+            return debugMessages;
         }
 
-        private Dictionary<string, Tuple<VertexPositionColor>> debugLines;
-
-        public Dictionary<string, Tuple<VertexPositionColor>> DebugLines
+        private Dictionary<string, VertexPositionColor[]> debugLines;
+        public void SetDebugLine(string key, Vector3 startPoint, Vector3 endPoint, Color color)
         {
-            get
-            {
-                if (debugLines == null)
-                    debugLines = new Dictionary<string, Tuple<VertexPositionColor>>();
-                return debugLines;
-            }
+            if (debugLines == null)
+                debugLines = new Dictionary<string, VertexPositionColor[]>();
+
+            var startVertex = new VertexPositionColor(startPoint, color);
+            var endVertex = new VertexPositionColor(endPoint, color);
+            debugLines[key] = new [] {startVertex, endVertex};
         }
-#endregion
+        public Dictionary<string, VertexPositionColor[]> GetDebugLines()
+        {
+            return debugLines;
+        }
+        public enum DebugLevelType
+        {
+            None = 0, Basic = 1, Verbose = 2
+        }
+
+        public DebugLevelType DebugLevel { get; set; } 
+        #endregion
+        
     }
 }

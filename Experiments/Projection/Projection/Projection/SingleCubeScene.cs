@@ -14,7 +14,7 @@ namespace Projection
             :base(graphicsDevice, center)
         {
             //Create cube
-            cube = new Cube(graphicsDevice
+            cube = new Cube(graphicsDevice, "MainCube"
                 , position: center    //We'll rotate around origin so place object there
                 , bounds: new Vector3(cubeWidth, cubeWidth, cubeWidth));
 

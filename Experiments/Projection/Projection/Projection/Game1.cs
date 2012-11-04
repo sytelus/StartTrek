@@ -79,11 +79,12 @@ namespace Projection
             //Create camera
             var cameraPosition = scene.RecommandedSettings.CameraPosition;
             var cameraUp = Vector3.Normalize((rotationOrigin - cameraPosition).SafeCross(Vector3.Right, Vector3.Up));
-            camera = new Camera(graphics.GraphicsDevice, cameraPosition, rotationOrigin, cameraUp, graphics.GraphicsDevice.Viewport.AspectRatio, 0.05f, 1E+5f);
+            camera = new Camera(graphics.GraphicsDevice, "MainCamera", cameraPosition, rotationOrigin, cameraUp, graphics.GraphicsDevice.Viewport.AspectRatio, 0.05f, 1E+5f);
 
             //Create help/debug text
-            var screenText = new ScreenText(graphics.GraphicsDevice, new Vector3(1.0f, 1.0f, 0), camera);
-
+            var screenText = new ScreenText(graphics.GraphicsDevice, "MainScreenText", new Vector3(1.0f, 1.0f, 0), camera);
+            screenText.AdditionalHelpText = "D -> Next Debug Level\nS -> Cycle through scenes";
+            
             //Create controls
             cameraControls = new ArcBallControls(camera, rotationOrigin, scene.RecommandedSettings.ArcBallOriginLocked, graphics.GraphicsDevice.Viewport.Width, graphics.GraphicsDevice.Viewport.Height);
 
@@ -135,6 +136,13 @@ namespace Projection
             {
                 currentScene = (SceneType) (((int) currentScene + 1)%2);
                 ResetScene(true);
+                keyDelay.Restart();
+            }
+            if (keyState.IsKeyDown(Keys.D) && keyDelay.ElapsedMilliseconds > 400)
+            {
+                foreach (var object3D in this.scene.Objects)
+                    object3D.DebugLevel = (Object3D.DebugLevelType) (((int)object3D.DebugLevel + 1)%3);
+                
                 keyDelay.Restart();
             }
         }

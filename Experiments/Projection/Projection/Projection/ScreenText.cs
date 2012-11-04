@@ -17,21 +17,19 @@ namespace Projection
 
         public enum ScreenTextModeType
         {
-            Help,
-            Info,
-            None
+            Help = 0,
+            Debug = 1,
+            Verbouse = 2,
+            None = -1
         }
 
         public Camera Camera { get; set; }
-        public ScreenTextModeType ScreenTextMode { get; set; }
-
-        public ScreenText(GraphicsDevice graphicsDevice, Vector3 position, Camera camera)
-            :base(graphicsDevice, position, Vector3.Zero, Vector3.Up)
+        private DebugLevelType? lastDebugLevel;
+        public ScreenText(GraphicsDevice graphicsDevice, string name, Vector3 position, Camera camera)
+            :base(graphicsDevice, name, position, Vector3.Zero, Vector3.Up)
         {
             this.Camera = camera;
-
-            ScreenTextMode = ScreenTextModeType.Help;
-            infoText.Append(HelpText);
+            lastDebugLevel = null;
         }
 
         public override void LoadContent(ContentManager content)
@@ -40,89 +38,86 @@ namespace Projection
             spriteFont = content.Load<SpriteFont>(@"InfoFont");
         }
 
+        private string additionalHelpText;
+        public string AdditionalHelpText
+        {
+            get { return this.additionalHelpText; }
+            set 
+            { 
+                this.additionalHelpText = value;
+                lastDebugLevel = null;
+            }
+        }
+
         public override bool RequiresUpdate
         {
             get { return true; }
         }
 
-        StringBuilder infoText = new StringBuilder();
-        Stopwatch lastChangeTime = Stopwatch.StartNew();
+        StringBuilder screenText = new StringBuilder();
         public override void Update(GameTime gameTime, MouseState mouseState, KeyboardState keyState, List<Object3D> objects)
         {
-            if (keyState.IsKeyDown(Keys.F1) && lastChangeTime.ElapsedMilliseconds > 400)
-            {
-                if (this.ScreenTextMode == ScreenTextModeType.Help)
-                {
-                    this.ScreenTextMode = ScreenTextModeType.None;
-                    infoText.Clear();
-                }
-                else
-                {
-                    this.ScreenTextMode = ScreenTextModeType.Help;
-                    infoText.Clear();
-                    infoText.Append(HelpText);
-                }
-                
-                lastChangeTime.Restart();
-            }
-            if (keyState.IsKeyDown(Keys.D) && lastChangeTime.ElapsedMilliseconds > 400)
-            {
-                if (this.ScreenTextMode == ScreenTextModeType.Info)
-                {
-                    this.ScreenTextMode = ScreenTextModeType.None;
-                    infoText.Clear();
-                }
-                else
-                    this.ScreenTextMode = ScreenTextModeType.Info;
-
-                lastChangeTime.Restart();
-            }
-
-            switch (this.ScreenTextMode)
-            {
-                case ScreenTextModeType.None:
-                    break;  //Static info text
-                case ScreenTextModeType.Help:
-                    break;  //Static info text
-                case ScreenTextModeType.Info:
-                    GetInfoText(mouseState);
-                    break;
-                default:
-                    throw new ArgumentException(string.Format("ScreenTextMode value {0} is not recognized", ScreenTextMode.ToString()));
-            }
+            if (this.lastDebugLevel != this.DebugLevel)
+                RebuildScreenText(mouseState, objects);
         }
 
-        private void GetInfoText(MouseState mouseState)
+        private void RebuildScreenText(MouseState mouseState, List<Object3D> objects)
         {
-            infoText.Clear();
-            infoText.AppendLine(string.Format("Camera Pos: {0}, {1}, {2}", this.Camera.Position.X, this.Camera.Position.Y, this.Camera.Position.Z));
-            infoText.AppendLine(string.Format("Camera Forward: {0}, {1}, {2}, {3}", this.Camera.ViewMatrix.Forward.X, this.Camera.ViewMatrix.Forward.Y, this.Camera.ViewMatrix.Forward.Z, this.Camera.ViewMatrix.Forward.Length()));
-            infoText.AppendLine(string.Format("Camera Up: {0}, {1}, {2}, {3}", this.Camera.ViewMatrix.Up.X, this.Camera.ViewMatrix.Up.Y, this.Camera.ViewMatrix.Up.Z, this.Camera.ViewMatrix.Up.Length()));
-            infoText.AppendLine(string.Format("Camera Right: {0}, {1}, {2}, {3}", this.Camera.ViewMatrix.Right.X, this.Camera.ViewMatrix.Right.Y, this.Camera.ViewMatrix.Right.Z, this.Camera.ViewMatrix.Right.Length()));
-            infoText.AppendLine(string.Format("Mouse: {0}, {1}", mouseState.X, mouseState.Y));
-            infoText.AppendLine(string.Format("Distance: {0}", (Vector3.Zero - this.Camera.Position).Length()));
-            infoText.AppendLine(string.Format("Camera Basis Angles: {0}, {1}, {2}", this.Camera.ViewMatrix.Forward.AngleWith(this.Camera.Up, false), this.Camera.Up.AngleWith(this.Camera.ViewMatrix.Left, false), this.Camera.ViewMatrix.Left.AngleWith(this.Camera.ViewMatrix.Forward, false)));
-
-            foreach (var debugMessage in this.Camera.DebugMessages)
+            switch (this.DebugLevel)
             {
-                infoText.AppendLine(string.Format("{0}: {1}", debugMessage.Key, debugMessage.Value));
+                case DebugLevelType.None:
+                    RebuildHelpText();
+                    break;
+                default:
+                    RebuildInfoText(mouseState, objects);
+                    break;
+            }
+            lastDebugLevel = this.DebugLevel;
+        }
+
+        private void RebuildHelpText()
+        {
+            screenText.Clear();
+            screenText.Append(HelpText);
+            screenText.AppendLine();
+            screenText.Append(this.AdditionalHelpText);
+        }
+
+        private void RebuildInfoText(MouseState mouseState, List<Object3D> objects)
+        {
+            screenText.Clear();
+            screenText.AppendLine(string.Format("Camera Pos: {0}, {1}, {2}", this.Camera.Position.X, this.Camera.Position.Y, this.Camera.Position.Z));
+            screenText.AppendLine(string.Format("Camera Forward: {0}, {1}, {2}, {3}", this.Camera.ViewMatrix.Forward.X, this.Camera.ViewMatrix.Forward.Y, this.Camera.ViewMatrix.Forward.Z, this.Camera.ViewMatrix.Forward.Length()));
+            screenText.AppendLine(string.Format("Camera Up: {0}, {1}, {2}, {3}", this.Camera.ViewMatrix.Up.X, this.Camera.ViewMatrix.Up.Y, this.Camera.ViewMatrix.Up.Z, this.Camera.ViewMatrix.Up.Length()));
+            screenText.AppendLine(string.Format("Camera Right: {0}, {1}, {2}, {3}", this.Camera.ViewMatrix.Right.X, this.Camera.ViewMatrix.Right.Y, this.Camera.ViewMatrix.Right.Z, this.Camera.ViewMatrix.Right.Length()));
+            screenText.AppendLine(string.Format("Mouse: {0}, {1}", mouseState.X, mouseState.Y));
+            screenText.AppendLine(string.Format("Distance: {0}", (Vector3.Zero - this.Camera.Position).Length()));
+            screenText.AppendLine(string.Format("Camera Basis Angles: {0}, {1}, {2}", this.Camera.ViewMatrix.Forward.AngleWith(this.Camera.Up, false), this.Camera.Up.AngleWith(this.Camera.ViewMatrix.Left, false), this.Camera.ViewMatrix.Left.AngleWith(this.Camera.ViewMatrix.Forward, false)));
+            screenText.AppendLine(string.Format("DebugLevel: {0}", this.DebugLevel.ToString()));
+
+            foreach (var object3D in objects)
+            {
+                var debugMessages = object3D.GetDebugMessages();
+                if (debugMessages == null)
+                    continue;
+
+                foreach (var debugMessage in debugMessages)
+                    screenText.AppendLine(string.Format("{0}-{1}:{2}", object3D.Name, debugMessage.Key, debugMessage.Value));
             }
         }
 
         public override void Draw()
         {
             spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.Additive);
-            spriteBatch.DrawString(spriteFont, infoText.ToString(), new Vector2(this.Position.X, this.Position.Y), Color.Yellow);
+            spriteBatch.DrawString(spriteFont, screenText.ToString(), new Vector2(this.Position.X, this.Position.Y), Color.Yellow);
             spriteBatch.End();
+
+            base.Draw();
         }
 
         private const string HelpText = @"Use Arrows & PageUp/Down keys or Mouse dragging
 Ctrl+Keys Or Left Mouse -> Rotate
 Shift+Keys -> Tilt
-Keys Or Right Mouse -> Pan
-F1 -> Show Hide Help
-D -> Show Hide Debug Info
-S -> Cycle through scenes
-";
+Keys Or Right Mouse -> Pan";
     }
 }

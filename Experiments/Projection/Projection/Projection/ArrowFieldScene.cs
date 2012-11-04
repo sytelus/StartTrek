@@ -15,7 +15,7 @@ namespace Projection
         {
             for (int i = 0; i < 500; i++)
             {
-                var cube = new Cube(graphicsDevice
+                var cube = new Cube(graphicsDevice, "Cube_" + i.ToString()
                                     , new Vector3(
                                           (float) (random.NextDouble() - 0.5)*1000,
                                           (float) (random.NextDouble() - 0.5)*1000,

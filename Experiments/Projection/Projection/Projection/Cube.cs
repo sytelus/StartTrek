@@ -18,8 +18,8 @@ namespace Projection
         public static readonly float[] DefaultVertexMultipliers = new float[] {1,1,1,1,1,1,1,1};
         public static readonly Color[] DefaultVertexColors = new Color[] { Color.Black, Color.Red, Color.Yellow, Color.Green, Color.Blue, Color.Magenta, Color.White, Color.Cyan };
 
-        public Cube(GraphicsDevice graphicsDevice, Vector3 position, Vector3 bounds, float[] vertexMultipliers = null, Color[] vertexColors = null)
-            : base(graphicsDevice, position, position, Vector3.Up)
+        public Cube(GraphicsDevice graphicsDevice, string name, Vector3 position, Vector3 bounds, float[] vertexMultipliers = null, Color[] vertexColors = null)
+            : base(graphicsDevice, name, position, position, Vector3.Up)
         {
             this.Bounds = bounds;
             this.halfWidth = bounds/2;
@@ -46,6 +46,8 @@ namespace Projection
             this.GraphicsDevice.SetVertexBuffer(vertexBuffer);
             this.GraphicsDevice.Indices = indexBuffer;
             this.GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, 0, vertexBuffer.VertexCount, 0, indexBuffer.IndexCount / 3);
+
+            base.Draw();
         }
 
         public override bool RequiresUpdate
