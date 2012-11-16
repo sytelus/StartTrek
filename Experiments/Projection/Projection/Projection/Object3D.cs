@@ -62,7 +62,11 @@ namespace Projection
         {
             //for derived class
         }
-
+        public virtual IEnumerable<VertexPositionColor> GetDebugVertices()
+        {
+            return Enumerable.Empty<VertexPositionColor>();
+            //for derived class
+        }
         #endregion 
 
         protected void DrawDebugLines()

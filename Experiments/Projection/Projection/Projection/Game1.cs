@@ -28,7 +28,7 @@ namespace Projection
         private IObject3DControls cameraControls;
 
         Effect effect;
-
+        private readonly AuxForm auxForm = new AuxForm();
         public Game1()
         {
             graphics = new GraphicsDeviceManager(this);
@@ -37,6 +37,8 @@ namespace Projection
             SetupGameWindow();
 
             this.IsMouseVisible = true;
+
+            auxForm.Show();
         }
 
         private void SetupGameWindow()
@@ -44,7 +46,7 @@ namespace Projection
             Window.ClientSizeChanged += Window_ClientSizeChanged;
             Window.AllowUserResizing = true;
             var form = (Form) Control.FromHandle(Window.Handle);
-            form.WindowState = FormWindowState.Maximized;
+            //form.WindowState = FormWindowState.Maximized;
         }
 
         /// <summary>
@@ -153,12 +155,20 @@ namespace Projection
                 cameraControls.UpdateScreenDimentions(graphics.GraphicsDevice.Viewport.Width, graphics.GraphicsDevice.Viewport.Height);
         }
 
+        protected override void OnExiting(object sender, EventArgs args)
+        {
+            if (auxForm != null)
+                auxForm.Close();
+
+            base.OnExiting(sender, args);
+        }
+
         protected override void Draw(GameTime gameTime)
         {
             graphics.GraphicsDevice.Clear(Color.CornflowerBlue);
 
             //These gets reset by SpriteBuffer so we need to set these to default
-            graphics.GraphicsDevice.RasterizerState = RasterizerState.CullNone;
+            graphics.GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
             graphics.GraphicsDevice.BlendState = BlendState.Opaque;
             graphics.GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             graphics.GraphicsDevice.SamplerStates[0] = SamplerState.LinearWrap;
@@ -174,6 +184,8 @@ namespace Projection
 
                 scene.Draw();
             }
+
+            auxForm.DrawDebugPoints(scene, camera, Matrix.Identity, camera.ViewMatrix, camera.ProjectionMatrix, graphics.GraphicsDevice.Viewport.Width, graphics.GraphicsDevice.Viewport.Height);
 
             base.Draw(gameTime);
         }

@@ -12,6 +12,8 @@ namespace Projection
         private Vector3 halfWidth;
         private float[] vertexMultipliers;
         private Color[] vertexColors;
+
+        private VertexPositionColor[] objectVertices;
         private VertexBuffer vertexBuffer;
         private IndexBuffer indexBuffer;
 
@@ -32,7 +34,7 @@ namespace Projection
 
         private void BuildVertexBuffer()
         {
-            var objectVertices = GetObjectVertices();
+            objectVertices = GetObjectVertices();
             vertexBuffer = new VertexBuffer(this.GraphicsDevice, VertexPositionColor.VertexDeclaration, objectVertices.Length, BufferUsage.WriteOnly);
             vertexBuffer.SetData<VertexPositionColor>(objectVertices);
 
@@ -53,6 +55,11 @@ namespace Projection
         public override bool RequiresUpdate
         {
             get { return false; }
+        }
+
+        public override IEnumerable<VertexPositionColor> GetDebugVertices()
+        {
+            return objectVertices;
         }
 
         private VertexPositionColor[] GetObjectVertices()

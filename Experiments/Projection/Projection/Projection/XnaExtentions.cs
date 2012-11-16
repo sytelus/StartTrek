@@ -146,5 +146,16 @@ namespace Projection
             var color = System.Drawing.Color.FromKnownColor(randomColorName);
             return new Microsoft.Xna.Framework.Color(color.R, color.G, color.B, color.A);
         }
+
+        public static System.Drawing.Color ToSystemDrawingColor(this Microsoft.Xna.Framework.Color xnaColor)
+        {
+            return System.Drawing.Color.FromArgb(xnaColor.R, xnaColor.G, xnaColor.B, 0);
+        }
+
+        public static bool WithinEpsilon(float a, float b)
+        {
+            float num = a - b;
+            return ((-1.401298E-45f <= num) && (num <= float.Epsilon));
+        }
     }
 }
